@@ -3,6 +3,7 @@ package de.upb.cs.analysis;
 import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.CertificateRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ChangeCipherSpecMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
@@ -17,14 +18,14 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicServerKeyExchangeA
 import de.upb.cs.action.ReceiveDynamicClientKeyExchangeAction;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.message.OverlappingServerKeyExchangeHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class ServerKeyExchangeAnalysis extends AbstractAnalysis {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerKeyExchangeAnalysis.class);
     private final OverlappingServerKeyExchangeHandler serverKeyExchangeHandler;
 
     public ServerKeyExchangeAnalysis(Config config, OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
@@ -39,25 +40,33 @@ public class ServerKeyExchangeAnalysis extends AbstractAnalysis {
             getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new ClientHelloMessage()));
             getTrace().addTlsAction(new SendAction(getAliasContext(), new HelloVerifyRequestMessage()));
         }
+
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new ClientHelloMessage()));
         getTrace().addTlsAction(new SendAction(getAliasContext(), new ServerHelloMessage(getConfig())));
         getTrace().addTlsAction(new SendAction(getAliasContext(), new CertificateMessage()));
         getTrace().addTlsAction(new SendDynamicServerKeyExchangeAction(getAliasContext()));
+
         if (isClientAuthentication()) {
-            getTrace().addTlsAction(new SendAction(getAliasContext(), new CertificateVerifyMessage()));
+            getTrace().addTlsAction(new SendAction(getAliasContext(), new CertificateRequestMessage()));
+
         }
         getTrace().addTlsAction(new SendAction(getAliasContext(), new ServerHelloDoneMessage()));
+
         if (isClientAuthentication()) {
             getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new CertificateMessage()));
+
         }
+
         getTrace().addTlsAction(new ReceiveDynamicClientKeyExchangeAction(getAliasContext()));
-        if (isCookieExchange()) {
+
+        if (isClientAuthentication()) {
             getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new CertificateVerifyMessage()));
         }
+
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new ChangeCipherSpecMessage()));
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new FinishedMessage()));
-        getTrace().addTlsAction(new SendAction(new ChangeCipherSpecMessage()));
-        getTrace().addTlsAction(new SendAction(new FinishedMessage()));
+        getTrace().addTlsAction(new SendAction(getAliasContext(), new ChangeCipherSpecMessage()));
+        getTrace().addTlsAction(new SendAction(getAliasContext(), new FinishedMessage()));
     }
 
     @Override
@@ -83,6 +92,7 @@ public class ServerKeyExchangeAnalysis extends AbstractAnalysis {
                 getDigestHandler()
         );
         resultsHandler.inspectWorkflowTrace();
+        resultsHandler.verifyClientFinishedMessage();
 
         if (getTlsContext().isReceivedFatalAlert()) {
             LOGGER.info("Received Fatal Alert");

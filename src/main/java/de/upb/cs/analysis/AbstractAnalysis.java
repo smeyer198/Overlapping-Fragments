@@ -11,14 +11,14 @@ import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.message.DigestHandler;
 import de.upb.cs.util.LogUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public abstract  class AbstractAnalysis {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalysis.class);
     private final OverlappingAnalysisConfig analysisConfig;
     private final String aliasContext;
     private final WorkflowTrace trace;
@@ -63,13 +63,13 @@ public abstract  class AbstractAnalysis {
                     return originalFragments;
                 }
 
-                getDigestHandler().updateManipulatedMessageBytes(originalFragment.getFragmentContentConfig(), overlappingFragments);
+                digestHandler.updateManipulatedMessageBytes(originalFragment.getFragmentContentConfig(), overlappingFragments);
                 if (isOverlappingBytesInDigest()) {
                     LOGGER.debug("Updating digest for message of type {}", type);
-                    getDigestHandler().updateLastDigestBytesInContext(getTlsContext(), getDigestHandler().getManipulatedMessageBytes());
-                }
+                    DigestHandler.updateLastDigestBytesInContext(getTlsContext(), getDigestHandler().getManipulatedMessageBytes());
+                    }
 
-                LogUtils.logOverlappingFragments(originalFragment, getAnalysisConfig().getOverlappingBytes(), overlappingFragments);
+                LogUtils.logOverlappingFragments(originalFragment, analysisConfig.getOverlappingBytes(), overlappingFragments);
 
                 return overlappingFragments;
             }

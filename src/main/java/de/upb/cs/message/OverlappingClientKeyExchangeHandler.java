@@ -3,19 +3,23 @@ package de.upb.cs.message;
 import de.rub.nds.modifiablevariable.util.ArrayConverter;
 import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.NamedGroup;
-import de.rub.nds.tlsattacker.core.crypto.ec.CurveFactory;
-import de.rub.nds.tlsattacker.core.crypto.ec.EllipticCurve;
 import de.rub.nds.tlsattacker.core.crypto.ec.Point;
 import de.rub.nds.tlsattacker.core.crypto.ec.PointFormatter;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
-import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.analysis.OverlappingFragmentException;
+import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.util.LogUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingClientKeyExchangeHandler.class);
 
     public OverlappingClientKeyExchangeHandler(Config config, OverlappingAnalysisConfig analysisConfig) {
         super(config, analysisConfig);
@@ -24,6 +28,8 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
     @Override
     public List<DtlsHandshakeMessageFragment> createFragmentsFromMessage(DtlsHandshakeMessageFragment originalFragment, TlsContext context) throws OverlappingFragmentException {
         switch (getOverlappingField()) {
+            case CLIENT_KEY_EXCHANGE:
+                return this.createOverlappingFragmentsForMessage(originalFragment);
             case CLIENT_KEY_EXCHANGE_RSA:
                 return this.createFragmentsForRSAClientKeyExchangeMessage(originalFragment, context);
             case CLIENT_KEY_EXCHANGE_DH:
@@ -35,21 +41,27 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
         }
     }
 
+    public List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForMessage(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
+        return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), getOverlappingBytes(), getAdditionalFragmentIndex());
+    }
+
     public List<DtlsHandshakeMessageFragment> createFragmentsForRSAClientKeyExchangeMessage(DtlsHandshakeMessageFragment originalFragment, TlsContext context) throws OverlappingFragmentException {
         if (getSplitIndex() != 2) {
             throw new OverlappingFragmentException("Index " + getOverlappingOrder() + " has to be 2");
         }
 
         byte[] updatedRSAPremasterSecret = this.computeUpdatedRSAPremasterSecret(context);
+
+        LOGGER.debug("Updated RSA Premaster Secret: {}", LogUtils.byteToHexString(updatedRSAPremasterSecret));
         getOverlappingFieldConfig().setOverlappingBytes(updatedRSAPremasterSecret);
 
         return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), updatedRSAPremasterSecret, getAdditionalFragmentIndex());
     }
 
-    private byte[] computeUpdatedRSAPremasterSecret(TlsContext context) {
+    public byte[] computeUpdatedRSAPremasterSecret(TlsContext context) {
         // Follow the same premaster generation as in https://github.com/tls-attacker/TLS-Attacker/blob/main/TLS-Core/src/main/java/de/rub/nds/tlsattacker/core/protocol/preparator/RSAClientKeyExchangePreparator.java
         int keyByteLength = context.getServerRSAModulus().bitLength() / 8;
-        int randomByteLength = keyByteLength - 48 - getAnalysisConfig().getDtlsVersion().getValue().length - 3;
+        int randomByteLength = keyByteLength - 48 - getAnalysisConfig().getServerHelloVersion().getValue().length - 3;
         byte[] padding = new byte[randomByteLength];
         context.getRandom().nextBytes(padding);
         ArrayConverter.makeArrayNonZero(padding);
@@ -62,11 +74,11 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
                 new byte[]{(byte) 0x00, (byte) 0x02},
                 padding,
                 new byte[]{(byte) 0x00},
-                getAnalysisConfig().getDtlsVersion().getValue(),
+                getAnalysisConfig().getServerHelloVersion().getValue(),
                 premaster_secret
         );
-        if (getAnalysisConfig().isOverridePremasterSecret()) {
-            getConfig().setDefaultPreMasterSecret(ArrayConverter.concatenate(getAnalysisConfig().getDtlsVersion().getValue(), premaster_secret));
+        if (getAnalysisConfig().isUseUpdatedKeys()) {
+            getConfig().setDefaultPreMasterSecret(ArrayConverter.concatenate(getAnalysisConfig().getServerHelloVersion().getValue(), premaster_secret));
         }
 
         BigInteger biPaddedPremasterSecret = new BigInteger(1, paddedPremasterSecret);
@@ -80,52 +92,43 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
             throw new OverlappingFragmentException("Index " + getSplitIndex() + " has to be 2");
         }
 
-        byte[] updatedDHPublicKey = this.computeUpdatedDHPublicKey(context);
-        getOverlappingFieldConfig().setOverlappingBytes(updatedDHPublicKey);
+        BigInteger privateDhKey = new BigInteger(getAnalysisConfig().getDhPrivateKey(), 16);
+        BigInteger publicDhKey = KeyComputation.computeDhPublicKey(privateDhKey, context);
+        byte[] publicDhKeyBytes = ArrayConverter.bigIntegerToByteArray(publicDhKey);
 
-        return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), updatedDHPublicKey, getAdditionalFragmentIndex());
-    }
+        LOGGER.debug("Updated DH Public Key: {}", LogUtils.byteToHexString(publicDhKeyBytes));
+        getOverlappingFieldConfig().setOverlappingBytes(publicDhKeyBytes);
 
-    private byte[] computeUpdatedDHPublicKey(TlsContext context) {
-        // Follow the same computation as in https://github.com/tls-attacker/TLS-Attacker/blob/main/TLS-Core/src/main/java/de/rub/nds/tlsattacker/core/protocol/preparator/DHClientKeyExchangePreparator.java
-        BigInteger generator = context.getServerDhGenerator();
-        BigInteger modulus = context.getServerDhModulus();
-
-        BigInteger privateKey = getAnalysisConfig().getClientDhPrivateKey();
-        if (getAnalysisConfig().isOverridePremasterSecret()) {
-            getConfig().setDefaultClientDhPrivateKey(privateKey);
+        if (getAnalysisConfig().isUseUpdatedKeys()) {
+            context.setServerDhPrivateKey(privateDhKey);
+            context.setServerDhPublicKey(publicDhKey);
         }
 
-        BigInteger publicKey = generator.modPow(privateKey.abs(), modulus.abs());
-
-        return ArrayConverter.bigIntegerToByteArray(publicKey);
+        return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), publicDhKeyBytes, getAdditionalFragmentIndex());
     }
 
     public List<DtlsHandshakeMessageFragment> createFragmentsForECDHClientKeyExchange(DtlsHandshakeMessageFragment originalFragment, TlsContext context) throws OverlappingFragmentException {
-        if (getSplitIndex() != 1) {
-            throw new OverlappingFragmentException("Index " + getSplitIndex() + " has to be 1");
+        if (getSplitIndex() != 1 && getSplitIndex() != 2) {
+            throw new OverlappingFragmentException("Index " + getSplitIndex() + " has to be 1 or 2");
         }
 
-        byte[] updatedECPublicPoint = this.computeUpdatedECPublicPoint(context);
-        getOverlappingFieldConfig().setOverlappingBytes(updatedECPublicPoint);
+        NamedGroup group = context.getChooser().getSelectedNamedGroup();
+        BigInteger privateEcKey = new BigInteger(getAnalysisConfig().getEcPrivateKey());
+        Point publicEcKey = KeyComputation.computeEcPublicKey(privateEcKey, group);
+        byte[] publicEcKeyBytes = PointFormatter.formatToByteArray(group, publicEcKey, getAnalysisConfig().getServerHelloPointFormat());
 
-        return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), updatedECPublicPoint, getAdditionalFragmentIndex());
-    }
+        LOGGER.debug("Updated EC Public Point: {}", LogUtils.byteToHexString(publicEcKeyBytes));
+        getOverlappingFieldConfig().setOverlappingBytes(publicEcKeyBytes);
 
-    public byte[] computeUpdatedECPublicPoint(TlsContext context) {
-        // Follow the generation as in https://github.com/tls-attacker/TLS-Attacker/blob/main/TLS-Core/src/main/java/de/rub/nds/tlsattacker/core/protocol/preparator/ECDHClientKeyExchangePreparator.java
-        // TODO Distinguish between context and config: https://github.com/tls-attacker/TLS-Attacker/blob/main/TLS-Core/src/main/java/de/rub/nds/tlsattacker/core/workflow/chooser/DefaultChooser.java#L637
-        NamedGroup group = context.getSelectedGroup();
-        EllipticCurve curve = CurveFactory.getCurve(group);
-
-        BigInteger privateKey = getAnalysisConfig().getClientEcPrivateKey();
-        if (getAnalysisConfig().isOverridePremasterSecret()) {
-            getConfig().setDefaultClientEcPrivateKey(privateKey);
+        if (getAnalysisConfig().isUseUpdatedKeys()) {
+            context.setServerEcPrivateKey(privateEcKey);
+            context.setServerEcPublicKey(publicEcKey);
         }
 
-        Point publicKeyPoint = curve.mult(privateKey, curve.getBasePoint());
-        Point publicKey = curve.getPoint(publicKeyPoint.getFieldX().getData(), publicKeyPoint.getFieldY().getData());
+        LOGGER.debug("Remove first byte from Public Point");
+        publicEcKeyBytes = Arrays.copyOfRange(publicEcKeyBytes, 1, publicEcKeyBytes.length);
 
-        return PointFormatter.formatToByteArray(group, publicKey, getAnalysisConfig().getSelectedPointFormat());
+        return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), publicEcKeyBytes, getAdditionalFragmentIndex());
     }
+
 }

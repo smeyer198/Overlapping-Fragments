@@ -91,8 +91,29 @@ public class OverlappingFragmentBuilder {
             return orderFragments(firstFragment, secondFragment, order);
         }
 
-        List<DtlsHandshakeMessageFragment> additionalFragments = buildAdditionalFragment(firstFragment, additionalFragmentIndex);
-        return orderFragments(additionalFragments.get(1), secondFragment, order, additionalFragments.get(0));
+        List<DtlsHandshakeMessageFragment> additionalFragments;
+
+        if (additionalFragmentIndex < 0) {
+            if (order == OverlappingOrder.ORIGINAL) {
+                additionalFragments = buildAdditionalFragment(secondFragment, additionalFragmentIndex);
+
+                return orderFragments(firstFragment, additionalFragments.get(0), order, additionalFragments.get(1));
+            } else {
+                additionalFragments = buildAdditionalFragment(secondFragment, additionalFragmentIndex);
+
+                return orderFragments(firstFragment, additionalFragments.get(0), order, additionalFragments.get(1));
+            }
+        } else {
+            if (order == OverlappingOrder.ORIGINAL) {
+                additionalFragments = buildAdditionalFragment(firstFragment, additionalFragmentIndex);
+
+                return orderFragments(additionalFragments.get(1), secondFragment, order, additionalFragments.get(0));
+            } else {
+                additionalFragments = buildAdditionalFragment(firstFragment, additionalFragmentIndex);
+
+                return orderFragments(secondFragment, additionalFragments.get(1), order, additionalFragments.get(0));
+            }
+        }
     }
 
     private static List<DtlsHandshakeMessageFragment> buildConsecutiveTypeBFragments(

@@ -4,7 +4,6 @@ import de.rub.nds.tlsattacker.core.constants.CipherSuite;
 import de.rub.nds.tlsattacker.core.constants.NamedGroup;
 import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
 import de.upb.cs.config.OverlappingAnalysisConfig;
-import de.upb.cs.config.ConnectionConfig;
 import de.upb.cs.config.OverlappingField;
 import de.upb.cs.config.OverlappingFieldConfig;
 import de.upb.cs.config.OverlappingOrder;
@@ -29,40 +28,40 @@ public class CHExtensionTestVectors {
             NamedGroup.SECP256R1
     );
 
-    public static OverlappingAnalysisConfig noOverlappingBytesOriginalOrder(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig noOverlappingBytesOriginalOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_HELLO_EMPTY,
+                OverlappingField.CLIENT_HELLO,
                 OverlappingType.NO_OVERLAPPING_TYPE,
                 OverlappingOrder.ORIGINAL,
                 0
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         analysisConfig.setAddEllipticCurveExtension(false);
-        analysisConfig.setSupportedGroups(supportedGroups);
+        analysisConfig.setClientHelloGroups(supportedGroups);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig noOverlappingBytesReversedOrder(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig noOverlappingBytesReversedOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_HELLO_EMPTY,
+                OverlappingField.CLIENT_HELLO,
                 OverlappingType.NO_OVERLAPPING_TYPE,
                 OverlappingOrder.REVERSED,
                 0
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         analysisConfig.setAddEllipticCurveExtension(false);
-        analysisConfig.setSupportedGroups(supportedGroups);
+        analysisConfig.setClientHelloGroups(supportedGroups);
         return analysisConfig;
     }
 
     /* ------------------------------------ Single byte ------------------------------------ */
-    public static OverlappingAnalysisConfig consecutiveTypeAOriginalOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeAOriginalOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_A,
@@ -71,15 +70,15 @@ public class CHExtensionTestVectors {
                 new byte[]{signatureAndHashAlgorithm[1]}
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         analysisConfig.setAddEllipticCurveExtension(false);
-        analysisConfig.setSupportedGroups(supportedGroups);
+        analysisConfig.setClientHelloGroups(supportedGroups);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig consecutiveTypeAReversedOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeAReversedOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_A,
@@ -88,13 +87,13 @@ public class CHExtensionTestVectors {
                 new byte[]{signatureAndHashAlgorithm[1]}
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig consecutiveTypeBOriginalOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeBOriginalOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_B,
@@ -103,13 +102,13 @@ public class CHExtensionTestVectors {
                 new byte[]{signatureAndHashAlgorithm[1]}
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig consecutiveTypeBReversedOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeBReversedOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_B,
@@ -118,13 +117,13 @@ public class CHExtensionTestVectors {
                 new byte[]{signatureAndHashAlgorithm[1]}
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeAOriginalOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeAOriginalOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_A,
@@ -134,13 +133,13 @@ public class CHExtensionTestVectors {
                 -1
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeAReversedOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeAReversedOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_A,
@@ -149,13 +148,13 @@ public class CHExtensionTestVectors {
                 new byte[]{signatureAndHashAlgorithm[1]}
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeBOriginalOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeBOriginalOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_B,
@@ -165,13 +164,13 @@ public class CHExtensionTestVectors {
                 -1
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeBReversedOrderSingleOverlappingByte(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeBReversedOrderSingleOverlappingByte() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_B,
@@ -180,15 +179,15 @@ public class CHExtensionTestVectors {
                 new byte[]{signatureAndHashAlgorithm[1]}
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
     /* ------------------------------------ Single byte ------------------------------------ */
 
     /* ------------------------------------ Multiple bytes ------------------------------------ */
-    public static OverlappingAnalysisConfig consecutiveTypeAOriginalOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeAOriginalOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_A,
@@ -197,13 +196,13 @@ public class CHExtensionTestVectors {
                 signatureAndHashAlgorithm
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig consecutiveTypeAReversedOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeAReversedOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_A,
@@ -212,13 +211,13 @@ public class CHExtensionTestVectors {
                 signatureAndHashAlgorithm
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig consecutiveTypeBOriginalOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeBOriginalOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_B,
@@ -227,13 +226,13 @@ public class CHExtensionTestVectors {
                 signatureAndHashAlgorithm
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig consecutiveTypeBReversedOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig consecutiveTypeBReversedOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.CONSECUTIVE_TYPE_B,
@@ -242,13 +241,13 @@ public class CHExtensionTestVectors {
                 signatureAndHashAlgorithm
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeAOriginalOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeAOriginalOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_A,
@@ -258,13 +257,13 @@ public class CHExtensionTestVectors {
                 -1
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeAReversedOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeAReversedOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_A,
@@ -273,13 +272,13 @@ public class CHExtensionTestVectors {
                 signatureAndHashAlgorithm
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeBOriginalOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeBOriginalOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_B,
@@ -289,13 +288,13 @@ public class CHExtensionTestVectors {
                 -1
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
 
-    public static OverlappingAnalysisConfig subsequentTypeBReversedOrderMultipleOverlappingBytes(ConnectionConfig connectionConfig) {
+    public static OverlappingAnalysisConfig subsequentTypeBReversedOrderMultipleOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
                 OverlappingField.CLIENT_HELLO_EXTENSION,
                 OverlappingType.SUBSEQUENT_TYPE_B,
@@ -304,9 +303,9 @@ public class CHExtensionTestVectors {
                 signatureAndHashAlgorithm
         );
 
-        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(connectionConfig, fieldConfig);
-        analysisConfig.setSupportedCipherSuites(cipherSuites);
-        analysisConfig.setSupportedSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
+        OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
+        analysisConfig.setClientHelloCipherSuites(cipherSuites);
+        analysisConfig.setClientHelloSignatureAndHashAlgorithms(signatureAndHashAlgorithms);
         return analysisConfig;
     }
     /* ------------------------------------ Multiple bytes ------------------------------------ */

@@ -1,14 +1,18 @@
 package de.upb.cs.analysis;
 
+import de.rub.nds.modifiablevariable.util.ArrayConverter;
 import de.rub.nds.tlsattacker.core.constants.AlertDescription;
 import de.rub.nds.tlsattacker.core.constants.HandshakeByteLength;
 import de.rub.nds.tlsattacker.core.constants.PRFAlgorithm;
+import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
 import de.rub.nds.tlsattacker.core.crypto.MessageDigestCollector;
 import de.rub.nds.tlsattacker.core.crypto.PseudoRandomFunction;
+import de.rub.nds.tlsattacker.core.crypto.SignatureCalculator;
 import de.rub.nds.tlsattacker.core.exceptions.CryptoException;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.AlertMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTraceUtil;
@@ -16,14 +20,20 @@ import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.message.DigestHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.crypto.Cipher;
+import java.math.BigInteger;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
 public class ResultsHandler {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResultsHandler.class);
     private final OverlappingAnalysisConfig analysisConfig;
     private final TlsContext context;
     private final WorkflowTrace trace;
@@ -64,6 +74,65 @@ public class ResultsHandler {
                 "\n\tSelected SignatureAndHashAlgorithm: " + context.getSelectedSignatureAndHashAlgorithm() +
                 "\n";
         LOGGER.info(hp);
+    }
+
+    public void verifyCertificateVerifyMessage() {
+        CertificateVerifyMessage certificateVerifyMessage = trace.getLastReceivedMessage(CertificateVerifyMessage.class);
+
+        MessageDigestCollector originalTraceDigest = digestHandler.parseWorkflowTraceForCertificateVerify(trace, context, analysisConfig.getMessageType(), false);
+        MessageDigestCollector manipulatedTraceDigest = digestHandler.parseWorkflowTraceForCertificateVerify(trace, context, analysisConfig.getMessageType(), true);
+
+        try {
+            SignatureAndHashAlgorithm algorithm = context.getChooser().getSelectedSigHashAlgorithm();
+            byte[] originalSignature = SignatureCalculator.generateSignature(algorithm, context.getChooser(), originalTraceDigest.getRawBytes());
+            byte[] manipulatedSignature = SignatureCalculator.generateSignature(algorithm, context.getChooser(), manipulatedTraceDigest.getRawBytes());
+
+            if (certificateVerifyMessage != null) {
+                byte[] certificateVerifyData = certificateVerifyMessage.getSignature().getValue();
+                byte[] decryptedSignature = verifySignature(certificateVerifyData);
+
+                LOGGER.debug("Signature:\n" +
+                                "\tCertificateVerify: {}\n" +
+                                "\tOriginal:          {}\n" +
+                                "\tManipulated:       {}\n" +
+                                "\t                   {}\n",
+                        certificateVerifyData, originalSignature, manipulatedSignature, decryptedSignature);
+            } else {
+                LOGGER.error("Did not receive CertificateVerify message");
+            }
+        } catch (CryptoException e) {
+            LOGGER.error("Error while computing the CertificateVerify signature");
+        }
+    }
+
+    private byte[] verifySignature(byte[] data) {
+        BigInteger n = context.getClientRsaModulus();
+        BigInteger e = context.getClientRSAPublicKey();
+
+        BigInteger s = new BigInteger(data);
+        BigInteger decrypted = s.modPow(e, n);
+
+        return ArrayConverter.bigIntegerToByteArray(decrypted);
+    }
+
+    private byte[] decryptSignature(byte[] data) {
+        BigInteger n = context.getChooser().getClientRsaModulus();
+        BigInteger e = context.getChooser().getClientRSAPublicKey();
+
+        try {
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+            RSAPublicKeySpec keySpec = new RSAPublicKeySpec(n, e);
+            RSAPublicKey publicKey = (RSAPublicKey) factory.generatePublic(keySpec);
+
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, publicKey);
+
+            return cipher.doFinal(data);
+        } catch (GeneralSecurityException ex) {
+            LOGGER.error("Unable to verify signature");
+
+            return null;
+        }
     }
 
     public void verifyClientFinishedMessage() {

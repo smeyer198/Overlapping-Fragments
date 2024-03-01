@@ -17,7 +17,7 @@ public class OverlappingServerHelloHandler extends OverlappingMessageHandler {
     @Override
     public List<DtlsHandshakeMessageFragment> createFragmentsFromMessage(DtlsHandshakeMessageFragment originalFragment, TlsContext context) throws OverlappingFragmentException {
         switch (getOverlappingField()) {
-            case SERVER_HELLO_EMPTY:
+            case SERVER_HELLO:
                 return this.createOverlappingFragmentsForMessage(originalFragment);
             case SERVER_HELLO_VERSION:
                 return this.createOverlappingFragmentsForVersion(originalFragment);
@@ -28,11 +28,11 @@ public class OverlappingServerHelloHandler extends OverlappingMessageHandler {
         }
     }
 
-    private List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForMessage(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForMessage(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
         return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), getOverlappingBytes(), getAdditionalFragmentIndex());
     }
 
-    private List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForVersion(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForVersion(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
         int lowerBound = 0;
         int upperBound = 2;
 
@@ -43,7 +43,7 @@ public class OverlappingServerHelloHandler extends OverlappingMessageHandler {
         return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), getOverlappingBytes(), getAdditionalFragmentIndex());
     }
 
-    private List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForCipherSuite(DtlsHandshakeMessageFragment originalFragment, TlsContext context) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> createOverlappingFragmentsForCipherSuite(DtlsHandshakeMessageFragment originalFragment, TlsContext context) throws OverlappingFragmentException {
         // Version(2) + Random + SessionIdLength(1) + SessionId
         int cipherSuiteIndex = 2 + context.getServerRandom().length + 1 + context.getServerSessionId().length;
         int lowerBound = 0;

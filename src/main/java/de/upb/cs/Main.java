@@ -1,25 +1,16 @@
 package de.upb.cs;
 
-import de.rub.nds.tlsattacker.core.constants.CipherSuite;
-import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.ConnectionConfig;
+import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.testvectors.clienthello.CHCipherSuiteTestVectors;
-import de.upb.cs.testvectors.clienthello.CHExtensionTestVectors;
-import de.upb.cs.testvectors.clienthello.CHVersionTestVectors;
-import de.upb.cs.testvectors.clientkeyexchange.DHKeyExchangeTestVectors;
-import de.upb.cs.testvectors.clientkeyexchange.ECDHKeyExchangeTestVectors;
-import de.upb.cs.testvectors.clientkeyexchange.RSAKeyExchangeTestVectors;
-import de.upb.cs.testvectors.serverhello.SHCipherSuiteTestVectors;
-import de.upb.cs.testvectors.serverhello.SHVersionTestVectors;
 
 public class Main {
 
     // IP and Port for connecting to a server (found by ifconfig) -> 172.19.142.193
     private static final String CLIENT_IP = "172.19.142.193";
-    private static final int CLIENT_PORT = 8090;
-
     //private static final String CLIENT_IP = "127.0.0.1";
+    private static final int CLIENT_PORT = 8090;
     //private static final int CLIENT_PORT = 4444;
 
     // IP and Port for accepting connections from a client (found by ping "$(hostname).local")
@@ -30,16 +21,28 @@ public class Main {
         ConnectionConfig connectionConfig = Main.createConnectionConfig();
 
         OverlappingAnalysisConfig analysisConfig;
+        analysisConfig = CHCipherSuiteTestVectors.subsequentTypeBReversedOrderSingleOverlappingByte();
 
-        analysisConfig = DHKeyExchangeTestVectors.subsequentTypeBReversedOrder(connectionConfig);
-
-        analysisConfig.setOverlappingBytesInDigest(false);
         analysisConfig.setFragmentFirstCHMessage(false);
-        analysisConfig.setIndividualTransportPacketsForFragments(true);
         analysisConfig.setCookieExchange(true);
-        analysisConfig.setClientAuthentication(true);
 
-        OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(analysisConfig);
+        analysisConfig.setIndividualTransportPacketsForFragments(true);
+        analysisConfig.setOverlappingBytesInDigest(false);
+        analysisConfig.setClientAuthentication(false);
+        analysisConfig.setAddRenegotiationInfoExtension(false);
+
+        analysisConfig.setUseUpdatedKeys(false);
+
+        //analysisConfig.setUpdateProtocolVersion(ProtocolVersion.DTLS10);
+        //analysisConfig.setUpdateCipherSuite(CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256);
+
+        //analysisConfig.setCertificatePath("src/main/resources/certs/ec_client_cert.pem");
+        //analysisConfig.setCertificateKeyPath("src/main/resources/certs/ec_client_key.pem");
+
+        analysisConfig.setCertificatePath("src/main/resources/certs/rsa_client_cert.pem");
+        analysisConfig.setCertificateKeyPath("src/main/resources/certs/rsa_client_key.pem");
+
+        OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, analysisConfig);
         analysis.executeAnalysis();
     }
 
@@ -48,11 +51,11 @@ public class Main {
 
         connectionConfig.setClientHostname(CLIENT_IP);
         connectionConfig.setClientPort(CLIENT_PORT);
-        connectionConfig.setClientTimeout(1000);   // 1 sec
+        connectionConfig.setClientTimeout(2000);   // 2 sec
 
         connectionConfig.setServerHostname(SERVER_IP);
         connectionConfig.setServerPort(SERVER_PORT);
-        connectionConfig.setServerTimeout(30000);   // 30 secs
+        connectionConfig.setServerTimeout(15000);   // 15 secs
 
         return connectionConfig;
     }

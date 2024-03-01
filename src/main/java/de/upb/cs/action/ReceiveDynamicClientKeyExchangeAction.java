@@ -37,7 +37,7 @@ public class ReceiveDynamicClientKeyExchangeAction extends MessageAction impleme
             throw new ActionExecutionException("Action already executed!");
         }
 
-        ClientKeyExchangeMessage clientKeyExchangeMessage =
+        ClientKeyExchangeMessage<?> clientKeyExchangeMessage =
                 new WorkflowConfigurationFactory(state.getConfig())
                         .createClientKeyExchangeMessage(
                                 AlgorithmResolver.getKeyExchangeAlgorithm(
@@ -102,10 +102,12 @@ public class ReceiveDynamicClientKeyExchangeAction extends MessageAction impleme
             if (messages.isEmpty()) {
                 sb.append("\tReceived no ClientKeyExchange message\n");
             } else {
-                for (ProtocolMessage message : messages) {
+                sb.append("\t");
+                for (ProtocolMessage<?> message : messages) {
                     sb.append(message.toCompactString());
                     sb.append(",");
                 }
+                sb.append("\n");
             }
         } else {
             sb = new StringBuilder("Receive Dynamic Client Key Exchange Action: (not executed)\n");

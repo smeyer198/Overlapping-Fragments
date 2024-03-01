@@ -18,14 +18,14 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicClientKeyExchangeA
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.message.OverlappingClientKeyExchangeHandler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyExchangeAnalysis.class);
     private final OverlappingClientKeyExchangeHandler clientKeyExchangeHandler;
 
     public ClientKeyExchangeAnalysis(Config config, OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
@@ -84,6 +84,7 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
                 getDigestHandler()
         );
         resultsHandler.inspectWorkflowTrace();
+        resultsHandler.verifyServerFinishedMessage();
 
         if (getTlsContext().isReceivedFatalAlert()) {
             LOGGER.info("Received Fatal Alert");

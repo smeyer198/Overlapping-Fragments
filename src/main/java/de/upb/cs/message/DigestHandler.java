@@ -5,6 +5,7 @@ import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.crypto.MessageDigestCollector;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
@@ -13,22 +14,22 @@ import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
 import de.upb.cs.util.LogUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class DigestHandler {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(DigestHandler.class);
     private byte[] manipulatedMessageBytes;
 
     public DigestHandler() {
         manipulatedMessageBytes = new byte[]{};
     }
 
-    public void updateLastDigestBytesInContext(TlsContext context, byte[] updatedBytes) {
+    public static void updateLastDigestBytesInContext(TlsContext context, byte[] updatedBytes) {
         byte[] oldDigest = context.getDigest().getRawBytes();
         byte[] digestWithoutLastBytes = Arrays.copyOfRange(oldDigest, 0, oldDigest.length - updatedBytes.length);
         byte[] newDigest = ArrayConverter.concatenate(digestWithoutLastBytes, updatedBytes);
@@ -65,6 +66,65 @@ public class DigestHandler {
 
     public byte[] getManipulatedMessageBytes() {
         return manipulatedMessageBytes;
+    }
+
+    public MessageDigestCollector parseWorkflowTraceForCertificateVerify(WorkflowTrace trace, TlsContext context, HandshakeMessageType messageType, boolean useManipulatedMessageBytes) {
+        int writeHandshakeMessageSequence = 0;
+        int readHandshakeMessageSequence = 0;
+        MessageDigestCollector digestCollector = new MessageDigestCollector();
+
+        for (TlsAction action : trace.getTlsActions()) {
+            if (!action.isExecuted()) {
+                continue;
+            }
+
+            if (!(action instanceof MessageAction)) {
+                continue;
+            }
+            MessageAction messageAction = (MessageAction) action;
+
+            for (ProtocolMessage<?> message : messageAction.getMessages()) {
+                // Skip ChangeCipherSpec
+                if (!message.isHandshakeMessage()) {
+                    continue;
+                }
+
+                HandshakeMessage<?> handshakeMessage = (HandshakeMessage<?>) message;
+
+                // CertificateVerify is not part of the hash computation
+                if (message instanceof CertificateVerifyMessage) {
+                    return digestCollector;
+                }
+
+                byte[] messageContent;
+                if (handshakeMessage.getHandshakeMessageType() == messageType && useManipulatedMessageBytes) {
+                    messageContent = manipulatedMessageBytes;
+                } else {
+                    messageContent = handshakeMessage.getSerializer(context).serializeHandshakeMessageContent();
+                }
+
+                byte[] completeMessage;
+                if (messageAction.isSendingAction()) {
+                    completeMessage = wrapInSingleFragment(handshakeMessage.getHandshakeMessageType(), messageContent, readHandshakeMessageSequence, context);
+                    readHandshakeMessageSequence++;
+                } else if (messageAction.isReceivingAction()) {
+                    completeMessage = wrapInSingleFragment(handshakeMessage.getHandshakeMessageType(), messageContent, writeHandshakeMessageSequence, context);
+                    writeHandshakeMessageSequence++;
+                } else {
+                    LOGGER.error("Action {} is not a SendingAction or ReceivingAction", action.toCompactString());
+                    continue;
+                }
+
+                digestCollector.append(completeMessage);
+
+                if (handshakeMessage instanceof HelloVerifyRequestMessage) {
+                    digestCollector.reset();
+                }
+            }
+
+        }
+
+        return digestCollector;
     }
 
     public MessageDigestCollector parseWorkflowTraceForClientFinished(WorkflowTrace trace, TlsContext context, HandshakeMessageType messageType, boolean useManipulatedMessageBytes) {

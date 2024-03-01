@@ -1,43 +1,58 @@
 package de.upb.cs.config;
 
 import de.rub.nds.tlsattacker.core.constants.CipherSuite;
-import de.rub.nds.tlsattacker.core.constants.CompressionMethod;
 import de.rub.nds.tlsattacker.core.constants.ECPointFormat;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.constants.NamedGroup;
 import de.rub.nds.tlsattacker.core.constants.ProtocolVersion;
 import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
+import de.upb.cs.util.LogUtils;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 
-import java.math.BigInteger;
 import java.util.List;
 
+@XmlRootElement(name = "AnalysisConfig")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class OverlappingAnalysisConfig {
 
+    @XmlTransient
     private HandshakeMessageType messageType;
 
-    private ProtocolVersion recordVersion = ProtocolVersion.DTLS12;
-    private ProtocolVersion dtlsVersion = ProtocolVersion.DTLS12;
+    private ProtocolVersion clientHelloVersion = ProtocolVersion.DTLS12;
+    private ProtocolVersion serverHelloVersion = ProtocolVersion.DTLS12;
 
-    private List<CipherSuite> supportedCipherSuites = List.of(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
-    private CipherSuite selectedCipherSuite = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
+    @XmlElementWrapper(name = "clientHelloCipherSuites")
+    @XmlElement(name = "cipherSuite")
+    private List<CipherSuite> clientHelloCipherSuites = List.of(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+    private CipherSuite serverHelloCipherSuite = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
 
-    private List<CompressionMethod> supportedCompressionMethods = List.of(CompressionMethod.NULL);
-    private CompressionMethod selectedCompressionMethod = CompressionMethod.NULL;
+    @XmlElementWrapper(name = "clientHelloSignatureAndHashAlgorithms")
+    @XmlElement(name = "signatureAndHashAlgorithm")
+    private List<SignatureAndHashAlgorithm> clientHelloSignatureAndHashAlgorithms = List.of(SignatureAndHashAlgorithm.RSA_SHA256);
+    private SignatureAndHashAlgorithm serverHelloSignatureAndHashAlgorithm = SignatureAndHashAlgorithm.RSA_SHA256;
 
-    private List<SignatureAndHashAlgorithm> supportedSignatureAndHashAlgorithms = List.of(SignatureAndHashAlgorithm.RSA_SHA256);
-    private SignatureAndHashAlgorithm selectedSignatureAndHashAlgorithm = SignatureAndHashAlgorithm.RSA_SHA256;
+    @XmlElementWrapper(name = "clientHelloGroups")
+    @XmlElement(name = "group")
+    private List<NamedGroup> clientHelloGroups = List.of(NamedGroup.SECP256R1);
+    private NamedGroup serverHelloGroup = NamedGroup.SECP256R1;
 
-    // TODO default value
-    private List<NamedGroup> supportedGroups = List.of(NamedGroup.SECP256R1);
-    private NamedGroup selectedGroup = NamedGroup.SECP256R1;
+    @XmlElementWrapper(name = "clientHelloPointFormats")
+    @XmlElement(name = "pointFormat")
+    private List<ECPointFormat> clientHelloPointFormats = List.of(ECPointFormat.UNCOMPRESSED);
+    private ECPointFormat serverHelloPointFormat = ECPointFormat.UNCOMPRESSED;
 
-    // TODO default value
-    private List<ECPointFormat> supportedPointFormats = List.of(ECPointFormat.UNCOMPRESSED);
-    private ECPointFormat selectedPointFormat = ECPointFormat.UNCOMPRESSED;
+    @XmlElement(name = "dhPrivateKey", defaultValue = "FFFF")
+    private String dhPrivateKey = "FFFF";
 
-    private BigInteger clientDhPrivateKey = new BigInteger("FFFF", 16);
-    private BigInteger clientEcPrivateKey = new BigInteger("3");
-    private boolean overridePremasterSecret = false;
+    @XmlElement(name = "ecPrivateKey", defaultValue = "3")
+    private String ecPrivateKey = "3";
+
+    private boolean useUpdatedKeys = false;
 
     private boolean addECPointFormatExtension = false;
     private boolean addEllipticCurveExtension = false;
@@ -52,14 +67,26 @@ public class OverlappingAnalysisConfig {
 
     private boolean cookieExchange = true;
 
-    private boolean individualTransportPacketsForFragments = false;
+    private boolean individualTransportPacketsForFragments = true;
 
-    private final ConnectionConfig connectionConfig;
+    @XmlElement(name = "certificatePath", defaultValue = "")
+    private String certificatePath = "";
 
-    private final OverlappingFieldConfig overlappingFieldConfig;
+    @XmlElement(name = "certificateKeyPath", defaultValue = "")
+    private String certificateKeyPath = "";
 
-    public OverlappingAnalysisConfig(ConnectionConfig connectionConfig, OverlappingFieldConfig overlappingFieldConfig) {
-        this.connectionConfig = connectionConfig;
+    /** Relevant for version in ServerHello */
+    private ProtocolVersion updateProtocolVersion = null;
+
+    /** Relevant for cipher suite in ServerHello */
+    private CipherSuite updateCipherSuite = null;
+
+    @XmlElement(name = "FieldConfig", required = true)
+    private OverlappingFieldConfig overlappingFieldConfig;
+
+    private OverlappingAnalysisConfig() {}
+
+    public OverlappingAnalysisConfig(OverlappingFieldConfig overlappingFieldConfig) {
         this.overlappingFieldConfig = overlappingFieldConfig;
     }
 
@@ -80,7 +107,11 @@ public class OverlappingAnalysisConfig {
     }
 
     public byte[] getOverlappingBytes() {
-        return getOverlappingFieldConfig().getOverlappingBytes();
+        if (!overlappingFieldConfig.getOverlappingHexBytes().isEmpty()) {
+            return LogUtils.hexToByteArray(overlappingFieldConfig.getOverlappingHexBytes());
+        } else {
+            return getOverlappingFieldConfig().getOverlappingBytes();
+        }
     }
 
     public int getAdditionalFragmentIndex() {
@@ -95,100 +126,84 @@ public class OverlappingAnalysisConfig {
         this.messageType = messageType;
     }
 
-    public ProtocolVersion getRecordVersion() {
-        return recordVersion;
+    public ProtocolVersion getClientHelloVersion() {
+        return clientHelloVersion;
     }
 
-    public void setRecordVersion(ProtocolVersion recordVersion) {
-        this.recordVersion = recordVersion;
+    public void setClientHelloVersion(ProtocolVersion clientHelloVersion) {
+        this.clientHelloVersion = clientHelloVersion;
     }
 
-    public ProtocolVersion getDtlsVersion() {
-        return dtlsVersion;
+    public ProtocolVersion getServerHelloVersion() {
+        return serverHelloVersion;
     }
 
-    public void setDtlsVersion(ProtocolVersion dtlsVersion) {
-        this.dtlsVersion = dtlsVersion;
+    public void setServerHelloVersion(ProtocolVersion serverHelloVersion) {
+        this.serverHelloVersion = serverHelloVersion;
     }
 
-    public List<CipherSuite> getSupportedCipherSuites() {
-        return supportedCipherSuites;
+    public List<CipherSuite> getClientHelloCipherSuites() {
+        return clientHelloCipherSuites;
     }
 
-    public void setSupportedCipherSuites(List<CipherSuite> supportedCipherSuites) {
-        this.supportedCipherSuites = supportedCipherSuites;
+    public void setClientHelloCipherSuites(List<CipherSuite> clientHelloCipherSuites) {
+        this.clientHelloCipherSuites = clientHelloCipherSuites;
     }
 
-    public CipherSuite getSelectedCipherSuite() {
-        return selectedCipherSuite;
+    public CipherSuite getServerHelloCipherSuite() {
+        return serverHelloCipherSuite;
     }
 
-    public void setSelectedCipherSuite(CipherSuite selectedCipherSuite) {
-        this.selectedCipherSuite = selectedCipherSuite;
+    public void setServerHelloCipherSuite(CipherSuite serverHelloCipherSuite) {
+        this.serverHelloCipherSuite = serverHelloCipherSuite;
     }
 
-    public List<CompressionMethod> getSupportedCompressionMethods() {
-        return supportedCompressionMethods;
+    public List<SignatureAndHashAlgorithm> getClientHelloSignatureAndHashAlgorithms() {
+        return clientHelloSignatureAndHashAlgorithms;
     }
 
-    public void setSupportedCompressionMethods(List<CompressionMethod> supportedCompressionMethods) {
-        this.supportedCompressionMethods = supportedCompressionMethods;
+    public void setClientHelloSignatureAndHashAlgorithms(List<SignatureAndHashAlgorithm> clientHelloSignatureAndHashAlgorithms) {
+        this.clientHelloSignatureAndHashAlgorithms = clientHelloSignatureAndHashAlgorithms;
     }
 
-    public CompressionMethod getSelectedCompressionMethod() {
-        return selectedCompressionMethod;
+    public SignatureAndHashAlgorithm getServerHelloSignatureAndHashAlgorithm() {
+        return serverHelloSignatureAndHashAlgorithm;
     }
 
-    public void setSelectedCompressionMethod(CompressionMethod selectedCompressionMethod) {
-        this.selectedCompressionMethod = selectedCompressionMethod;
+    public void setServerHelloSignatureAndHashAlgorithm(SignatureAndHashAlgorithm serverHelloSignatureAndHashAlgorithm) {
+        this.serverHelloSignatureAndHashAlgorithm = serverHelloSignatureAndHashAlgorithm;
     }
 
-    public List<SignatureAndHashAlgorithm> getSupportedSignatureAndHashAlgorithms() {
-        return supportedSignatureAndHashAlgorithms;
+    public List<NamedGroup> getClientHelloGroups() {
+        return clientHelloGroups;
     }
 
-    public void setSupportedSignatureAndHashAlgorithms(List<SignatureAndHashAlgorithm> supportedSignatureAndHashAlgorithms) {
-        this.supportedSignatureAndHashAlgorithms = supportedSignatureAndHashAlgorithms;
+    public void setClientHelloGroups(List<NamedGroup> clientHelloGroups) {
+        this.clientHelloGroups = clientHelloGroups;
     }
 
-    public SignatureAndHashAlgorithm getSelectedSignatureAndHashAlgorithm() {
-        return selectedSignatureAndHashAlgorithm;
+    public NamedGroup getServerHelloGroup() {
+        return serverHelloGroup;
     }
 
-    public void setSelectedSignatureAndHashAlgorithm(SignatureAndHashAlgorithm selectedSignatureAndHashAlgorithm) {
-        this.selectedSignatureAndHashAlgorithm = selectedSignatureAndHashAlgorithm;
+    public void setServerHelloGroup(NamedGroup serverHelloGroup) {
+        this.serverHelloGroup = serverHelloGroup;
     }
 
-    public List<NamedGroup> getSupportedGroups() {
-        return supportedGroups;
+    public List<ECPointFormat> getClientHelloPointFormats() {
+        return clientHelloPointFormats;
     }
 
-    public void setSupportedGroups(List<NamedGroup> supportedGroups) {
-        this.supportedGroups = supportedGroups;
+    public void setClientHelloPointFormats(List<ECPointFormat> clientHelloPointFormats) {
+        this.clientHelloPointFormats = clientHelloPointFormats;
     }
 
-    public NamedGroup getSelectedGroup() {
-        return selectedGroup;
+    public ECPointFormat getServerHelloPointFormat() {
+        return serverHelloPointFormat;
     }
 
-    public void setSelectedGroup(NamedGroup selectedGroup) {
-        this.selectedGroup = selectedGroup;
-    }
-
-    public List<ECPointFormat> getSupportedPointFormats() {
-        return supportedPointFormats;
-    }
-
-    public void setSupportedPointFormats(List<ECPointFormat> supportedPointFormats) {
-        this.supportedPointFormats = supportedPointFormats;
-    }
-
-    public ECPointFormat getSelectedPointFormat() {
-        return selectedPointFormat;
-    }
-
-    public void setSelectedPointFormat(ECPointFormat selectedPointFormat) {
-        this.selectedPointFormat = selectedPointFormat;
+    public void setServerHelloPointFormat(ECPointFormat serverHelloPointFormat) {
+        this.serverHelloPointFormat = serverHelloPointFormat;
     }
 
     public boolean isAddECPointFormatExtension() {
@@ -247,10 +262,6 @@ public class OverlappingAnalysisConfig {
         this.cookieExchange = cookieExchange;
     }
 
-    public ConnectionConfig getConnectionConfig() {
-        return connectionConfig;
-    }
-
     public OverlappingFieldConfig getOverlappingFieldConfig() {
         return overlappingFieldConfig;
     }
@@ -263,27 +274,59 @@ public class OverlappingAnalysisConfig {
         this.individualTransportPacketsForFragments = individualTransportPacketsForFragments;
     }
 
-    public BigInteger getClientDhPrivateKey() {
-        return clientDhPrivateKey;
+    public String getDhPrivateKey() {
+        return dhPrivateKey;
     }
 
-    public void setClientDhPrivateKey(BigInteger clientDhPrivateKey) {
-        this.clientDhPrivateKey = clientDhPrivateKey;
+    public void setDhPrivateKey(String dhPrivateKey) {
+        this.dhPrivateKey = dhPrivateKey;
     }
 
-    public BigInteger getClientEcPrivateKey() {
-        return clientEcPrivateKey;
+    public String getEcPrivateKey() {
+        return ecPrivateKey;
     }
 
-    public void setClientEcPrivateKey(BigInteger clientEcPrivateKey) {
-        this.clientEcPrivateKey = clientEcPrivateKey;
+    public void setEcPrivateKey(String ecPrivateKey) {
+        this.ecPrivateKey = ecPrivateKey;
     }
 
-    public boolean isOverridePremasterSecret() {
-        return overridePremasterSecret;
+    public boolean isUseUpdatedKeys() {
+        return useUpdatedKeys;
     }
 
-    public void setOverridePremasterSecret(boolean overridePremasterSecret) {
-        this.overridePremasterSecret = overridePremasterSecret;
+    public void setUseUpdatedKeys(boolean useUpdatedKeys) {
+        this.useUpdatedKeys = useUpdatedKeys;
+    }
+
+    public CipherSuite getUpdateCipherSuite() {
+        return updateCipherSuite;
+    }
+
+    public void setUpdateCipherSuite(CipherSuite updateCipherSuite) {
+        this.updateCipherSuite = updateCipherSuite;
+    }
+
+    public ProtocolVersion getUpdateProtocolVersion() {
+        return updateProtocolVersion;
+    }
+
+    public void setUpdateProtocolVersion(ProtocolVersion updateProtocolVersion) {
+        this.updateProtocolVersion = updateProtocolVersion;
+    }
+
+    public String getCertificatePath() {
+        return certificatePath;
+    }
+
+    public void setCertificatePath(String certificatePath) {
+        this.certificatePath = certificatePath;
+    }
+
+    public String getCertificateKeyPath() {
+        return certificateKeyPath;
+    }
+
+    public void setCertificateKeyPath(String certificateKeyPath) {
+        this.certificateKeyPath = certificateKeyPath;
     }
 }

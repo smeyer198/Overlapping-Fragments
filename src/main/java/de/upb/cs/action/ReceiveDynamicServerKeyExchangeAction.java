@@ -39,7 +39,7 @@ public class ReceiveDynamicServerKeyExchangeAction extends MessageAction impleme
         }
 
         CipherSuite selectedCipherSuite = tlsContext.getChooser().getSelectedCipherSuite();
-        ServerKeyExchangeMessage serverKeyExchangeMessage =
+        ServerKeyExchangeMessage<?> serverKeyExchangeMessage =
                 new WorkflowConfigurationFactory(state.getConfig())
                         .createServerKeyExchangeMessage(
                                 AlgorithmResolver.getKeyExchangeAlgorithm(selectedCipherSuite));
@@ -104,7 +104,7 @@ public class ReceiveDynamicServerKeyExchangeAction extends MessageAction impleme
                 sb.append("\tReceived no ServerKeyExchange message\n");
             } else {
                 sb.append("\t");
-                for (ProtocolMessage message : messages) {
+                for (ProtocolMessage<?> message : messages) {
                     sb.append(message.toCompactString());
                     sb.append(",");
                 }
