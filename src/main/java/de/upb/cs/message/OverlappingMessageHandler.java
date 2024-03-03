@@ -12,6 +12,7 @@ import de.upb.cs.config.OverlappingField;
 import de.upb.cs.config.OverlappingFieldConfig;
 import de.upb.cs.config.OverlappingOrder;
 import de.upb.cs.config.OverlappingType;
+import de.upb.cs.util.LogUtils;
 import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
@@ -113,7 +114,7 @@ public abstract class OverlappingMessageHandler {
     }
 
     public byte[] getOverlappingBytes() {
-        return analysisConfig.getOverlappingBytes();
+        return LogUtils.hexToByteArray(analysisConfig.getOverlappingBytes());
     }
 
     public int getAdditionalFragmentIndex() {

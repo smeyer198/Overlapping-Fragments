@@ -36,15 +36,13 @@ public class ECDHClientKeyExchangeTestVectors {
     );
 
     public static OverlappingAnalysisConfig noOverlappingBytes() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_ECDH,
-                OverlappingType.NO_OVERLAPPING_TYPE,
-                OverlappingOrder.ORIGINAL,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
-
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
         analysisConfig.setAddEllipticCurveExtension(true);
         analysisConfig.setClientHelloGroups(supportedGroups);
@@ -57,16 +55,14 @@ public class ECDHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeAOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_A,
-                OverlappingOrder.ORIGINAL,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
-
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
         analysisConfig.setAddEllipticCurveExtension(true);
         analysisConfig.setClientHelloGroups(supportedGroups);
@@ -79,16 +75,14 @@ public class ECDHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeAReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_A,
-                OverlappingOrder.REVERSED,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
-
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
         analysisConfig.setAddEllipticCurveExtension(true);
         analysisConfig.setClientHelloGroups(supportedGroups);
@@ -101,16 +95,14 @@ public class ECDHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeBOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_B,
-                OverlappingOrder.ORIGINAL,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
-
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
         analysisConfig.setAddEllipticCurveExtension(true);
         analysisConfig.setClientHelloGroups(supportedGroups);
@@ -123,16 +115,14 @@ public class ECDHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeBReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_B,
-                OverlappingOrder.REVERSED,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
-
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
         analysisConfig.setAddEllipticCurveExtension(true);
         analysisConfig.setClientHelloGroups(supportedGroups);

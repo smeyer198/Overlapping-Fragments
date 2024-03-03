@@ -1,6 +1,5 @@
 package de.upb.cs.config;
 
-import de.upb.cs.util.LogUtils;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -22,79 +21,98 @@ public class OverlappingFieldConfig {
     @XmlElement(name = "splitIndex", defaultValue = "0")
     private int splitIndex;
 
-    @XmlElement(name = "overlappingHexBytes", defaultValue = "")
-    private String overlappingHexBytes;
-
-    @XmlElement
-    private byte[] overlappingBytes;
+    @XmlElement(name = "overlappingBytes", defaultValue = "")
+    private String overlappingBytes;
 
     @XmlElement(name = "additionalFragmentIndex", defaultValue = "0")
     private int additionalFragmentIndex;
 
     /**
      * ClientHello and ServerHello
-     */
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, byte[] overlappingBytes) {
+     *
+    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, String overlappingBytes) {
         this(field, type, order, splitIndex, overlappingBytes, 0);
-    }
+    }*/
 
     /**
      * ClientKeyExchange
-     */
+     *
     public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex) {
-        this(field, type, order, splitIndex, new byte[]{});
-    }
+        this(field, type, order, splitIndex, "");
+    }*/
 
     /**
      * ServerKeyExchange
-     */
+     *
     public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order) {
-        this(field, type, order, 0, new byte[]{}, 0);
-    }
+        this(field, type, order, 0, "", 0);
+    }*/
 
+    /*
     public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, int additionalFragmentIndex) {
-        this(field, type, order, splitIndex, new byte[]{}, additionalFragmentIndex);
-    }
-
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, byte[] overlappingBytes, int additionalFragmentIndex) {
+        this(field, type, order, splitIndex, "", additionalFragmentIndex);
+    }*/
+    /*
+    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, String overlappingBytes, int additionalFragmentIndex) {
         this.overlappingField = field;
         this.overlappingType = type;
         this.overlappingOrder = order;
         this.splitIndex = splitIndex;
         this.overlappingBytes = overlappingBytes;
         this.additionalFragmentIndex = additionalFragmentIndex;
+    }*/
+
+    public OverlappingFieldConfig() {
+        this.overlappingField = OverlappingField.NO_FIELD;
+        this.overlappingType = OverlappingType.NO_OVERLAPPING_TYPE;
+        this.overlappingOrder = OverlappingOrder.ORIGINAL;
+        this.splitIndex = 0;
+        this.overlappingBytes = "";
+        this.additionalFragmentIndex = 0;
     }
 
-    private OverlappingFieldConfig() {
-        overlappingBytes = new byte[]{};
+    public void setOverlappingField(OverlappingField field) {
+        this.overlappingField = field;
     }
 
     public OverlappingField getOverlappingField() {
         return overlappingField;
     }
 
+    public void setOverlappingType(OverlappingType type) {
+        this.overlappingType = type;
+    }
+
     public OverlappingType getOverlappingType() {
         return overlappingType;
+    }
+
+    public void setOverlappingOrder(OverlappingOrder order) {
+        this.overlappingOrder = order;
     }
 
     public OverlappingOrder getOverlappingOrder() {
         return overlappingOrder;
     }
 
+    public void setSplitIndex(int splitIndex) {
+        this.splitIndex = splitIndex;
+    }
+
     public int getSplitIndex() {
         return splitIndex;
     }
 
-    public String getOverlappingHexBytes() {
-        return overlappingHexBytes;
+    public void setOverlappingBytes(String overlappingBytes) {
+        this.overlappingBytes = overlappingBytes;
     }
 
-    public byte[] getOverlappingBytes() {
+    public String getOverlappingBytes() {
         return overlappingBytes;
     }
 
-    public void setOverlappingBytes(byte[] overlappingBytes) {
-        this.overlappingBytes = overlappingBytes;
+    public void setAdditionalFragmentIndex(int additionalFragmentIndex) {
+        this.additionalFragmentIndex = additionalFragmentIndex;
     }
 
     public int getAdditionalFragmentIndex() {
@@ -107,7 +125,7 @@ public class OverlappingFieldConfig {
                 "\n\tType: " + overlappingType +
                 "\n\tOrder: " + overlappingOrder +
                 "\n\tSplit Index: " + splitIndex +
-                "\n\tBytes: " + LogUtils.byteToHexString(overlappingBytes) +
+                "\n\tBytes: " + overlappingBytes +
                 "\n\tAdditional index: " + additionalFragmentIndex +
                 "\n]";
     }

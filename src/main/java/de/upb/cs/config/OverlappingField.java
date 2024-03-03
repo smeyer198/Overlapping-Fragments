@@ -1,6 +1,7 @@
 package de.upb.cs.config;
 
 public enum OverlappingField {
+    NO_FIELD,
     CLIENT_HELLO,
     CLIENT_HELLO_VERSION,
     CLIENT_HELLO_CIPHER_SUITE,

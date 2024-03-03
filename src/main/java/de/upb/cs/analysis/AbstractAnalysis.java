@@ -9,6 +9,7 @@ import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment
 import de.rub.nds.tlsattacker.core.state.State;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.OverlappingField;
 import de.upb.cs.message.DigestHandler;
 import de.upb.cs.util.LogUtils;
 import org.slf4j.Logger;
@@ -49,6 +50,10 @@ public abstract  class AbstractAnalysis {
                     return originalFragments;
                 }
 
+                if (analysisConfig.getOverlappingField() == OverlappingField.NO_FIELD) {
+                    return originalFragments;
+                }
+
                 DtlsHandshakeMessageFragment originalFragment;
                 if (originalFragments.size() != 1) {
                     originalFragment = getSingleFragment(originalFragments, handshakeBytes);
@@ -67,9 +72,9 @@ public abstract  class AbstractAnalysis {
                 if (isOverlappingBytesInDigest()) {
                     LOGGER.debug("Updating digest for message of type {}", type);
                     DigestHandler.updateLastDigestBytesInContext(getTlsContext(), getDigestHandler().getManipulatedMessageBytes());
-                    }
+                }
 
-                LogUtils.logOverlappingFragments(originalFragment, analysisConfig.getOverlappingBytes(), overlappingFragments);
+                LogUtils.logOverlappingFragments(originalFragment, overlappingFragments);
 
                 return overlappingFragments;
             }

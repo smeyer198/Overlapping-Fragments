@@ -24,24 +24,8 @@ public class Analysis {
         JAXBContext context = JAXBContext.newInstance(OverlappingAnalysisConfig.class);
         OverlappingAnalysisConfig analysisConfig = (OverlappingAnalysisConfig) context.createUnmarshaller().unmarshal(new FileReader(settings.getAnalysisConfigPath()));
 
-        //JAXBContext context = JAXBContext.newInstance(OverlappingFieldConfig.class);
-        //OverlappingFieldConfig config = (OverlappingFieldConfig) context.createUnmarshaller().unmarshal(new File(settings.getAnalysisConfigPath()));
-        //System.out.println(config);
         OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, analysisConfig);
         analysis.executeAnalysis();
-
-        try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(OverlappingFieldConfig.class);
-            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-
-            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); // To format XML
-
-            //Print XML String to Console
-            jaxbMarshaller.marshal(analysisConfig.getOverlappingFieldConfig(), new File("employee.xml"));
-
-        } catch (JAXBException e) {
-            e.printStackTrace();
-        }
     }
 
     private static ConnectionConfig createConnectionConfig(AnalysisSettings settings) {

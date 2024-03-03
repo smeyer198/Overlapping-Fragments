@@ -53,7 +53,7 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
         byte[] updatedRSAPremasterSecret = this.computeUpdatedRSAPremasterSecret(context);
 
         LOGGER.debug("Updated RSA Premaster Secret: {}", LogUtils.byteToHexString(updatedRSAPremasterSecret));
-        getOverlappingFieldConfig().setOverlappingBytes(updatedRSAPremasterSecret);
+        //getOverlappingFieldConfig().setOverlappingBytes(updatedRSAPremasterSecret);
 
         return OverlappingFragmentBuilder.buildOverlappingFragments(originalFragment, getOverlappingType(), getOverlappingOrder(), getSplitIndex(), updatedRSAPremasterSecret, getAdditionalFragmentIndex());
     }
@@ -97,7 +97,7 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
         byte[] publicDhKeyBytes = ArrayConverter.bigIntegerToByteArray(publicDhKey);
 
         LOGGER.debug("Updated DH Public Key: {}", LogUtils.byteToHexString(publicDhKeyBytes));
-        getOverlappingFieldConfig().setOverlappingBytes(publicDhKeyBytes);
+        //getOverlappingFieldConfig().setOverlappingBytes(publicDhKeyBytes);
 
         if (getAnalysisConfig().isUseUpdatedKeys()) {
             context.setServerDhPrivateKey(privateDhKey);
@@ -118,7 +118,7 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
         byte[] publicEcKeyBytes = PointFormatter.formatToByteArray(group, publicEcKey, getAnalysisConfig().getServerHelloPointFormat());
 
         LOGGER.debug("Updated EC Public Point: {}", LogUtils.byteToHexString(publicEcKeyBytes));
-        getOverlappingFieldConfig().setOverlappingBytes(publicEcKeyBytes);
+        //getOverlappingFieldConfig().setOverlappingBytes(publicEcKeyBytes);
 
         if (getAnalysisConfig().isUseUpdatedKeys()) {
             context.setServerEcPrivateKey(privateEcKey);

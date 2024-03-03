@@ -18,12 +18,11 @@ public class ECDHServerKeyExchangeTestVectors {
     private static final String privateKey = "5";
 
     public static OverlappingAnalysisConfig noOverlappingBytes() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE,
-                OverlappingType.NO_OVERLAPPING_TYPE,
-                OverlappingOrder.ORIGINAL,
-                20
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(20);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -33,11 +32,10 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig consecutiveTypeAOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.CONSECUTIVE_TYPE_A,
-                OverlappingOrder.ORIGINAL
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.CONSECUTIVE_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -47,11 +45,10 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig consecutiveTypeAReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.CONSECUTIVE_TYPE_A,
-                OverlappingOrder.REVERSED
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.CONSECUTIVE_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -61,11 +58,10 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig consecutiveTypeBOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.CONSECUTIVE_TYPE_B,
-                OverlappingOrder.ORIGINAL
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.CONSECUTIVE_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -75,11 +71,10 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig consecutiveTypeBReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.CONSECUTIVE_TYPE_B,
-                OverlappingOrder.REVERSED
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.CONSECUTIVE_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -89,13 +84,11 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeAOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_A,
-                OverlappingOrder.ORIGINAL,
-                0,
-                -1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setAdditionalFragmentIndex(-1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -105,13 +98,11 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeAReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_A,
-                OverlappingOrder.REVERSED,
-                0,
-                -1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
+        fieldConfig.setAdditionalFragmentIndex(-1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -121,13 +112,11 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeBOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_B,
-                OverlappingOrder.ORIGINAL,
-                0,
-                -1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setAdditionalFragmentIndex(-1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);
@@ -137,13 +126,11 @@ public class ECDHServerKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeBReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.SERVER_KEY_EXCHANGE_ECDH,
-                OverlappingType.SUBSEQUENT_TYPE_B,
-                OverlappingOrder.REVERSED,
-                0,
-                -1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE_ECDH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
+        fieldConfig.setAdditionalFragmentIndex(-1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setServerHelloCipherSuite(serverHelloCipherSuite);

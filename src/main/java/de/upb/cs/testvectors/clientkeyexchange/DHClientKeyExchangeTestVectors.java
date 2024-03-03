@@ -20,13 +20,12 @@ public class DHClientKeyExchangeTestVectors {
     private static final String privateKey = "FEFE";
 
     public static OverlappingAnalysisConfig subsequentTypeAOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_DH,
-                OverlappingType.SUBSEQUENT_TYPE_A,
-                OverlappingOrder.ORIGINAL,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_DH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
@@ -35,13 +34,12 @@ public class DHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeAReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_DH,
-                OverlappingType.SUBSEQUENT_TYPE_A,
-                OverlappingOrder.REVERSED,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_DH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_A);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
@@ -50,13 +48,12 @@ public class DHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeBOriginalOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_DH,
-                OverlappingType.SUBSEQUENT_TYPE_B,
-                OverlappingOrder.ORIGINAL,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_DH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setClientHelloCipherSuites(cipherSuites);
@@ -65,13 +62,12 @@ public class DHClientKeyExchangeTestVectors {
     }
 
     public static OverlappingAnalysisConfig subsequentTypeBReversedOrder() {
-        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig(
-                OverlappingField.CLIENT_KEY_EXCHANGE_DH,
-                OverlappingType.SUBSEQUENT_TYPE_B,
-                OverlappingOrder.REVERSED,
-                splitIndex,
-                1
-        );
+        OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
+        fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_DH);
+        fieldConfig.setOverlappingType(OverlappingType.SUBSEQUENT_TYPE_B);
+        fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
+        fieldConfig.setSplitIndex(splitIndex);
+        fieldConfig.setAdditionalFragmentIndex(1);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);
         analysisConfig.setClientHelloCipherSuites(cipherSuites);

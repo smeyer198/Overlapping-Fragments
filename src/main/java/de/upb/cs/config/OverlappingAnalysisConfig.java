@@ -6,7 +6,6 @@ import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.constants.NamedGroup;
 import de.rub.nds.tlsattacker.core.constants.ProtocolVersion;
 import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
-import de.upb.cs.util.LogUtils;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -14,6 +13,8 @@ import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @XmlRootElement(name = "AnalysisConfig")
@@ -28,22 +29,22 @@ public class OverlappingAnalysisConfig {
 
     @XmlElementWrapper(name = "clientHelloCipherSuites")
     @XmlElement(name = "cipherSuite")
-    private List<CipherSuite> clientHelloCipherSuites = List.of(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+    private List<CipherSuite> clientHelloCipherSuites;
     private CipherSuite serverHelloCipherSuite = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
 
     @XmlElementWrapper(name = "clientHelloSignatureAndHashAlgorithms")
     @XmlElement(name = "signatureAndHashAlgorithm")
-    private List<SignatureAndHashAlgorithm> clientHelloSignatureAndHashAlgorithms = List.of(SignatureAndHashAlgorithm.RSA_SHA256);
+    private List<SignatureAndHashAlgorithm> clientHelloSignatureAndHashAlgorithms;
     private SignatureAndHashAlgorithm serverHelloSignatureAndHashAlgorithm = SignatureAndHashAlgorithm.RSA_SHA256;
 
     @XmlElementWrapper(name = "clientHelloGroups")
     @XmlElement(name = "group")
-    private List<NamedGroup> clientHelloGroups = List.of(NamedGroup.SECP256R1);
+    private List<NamedGroup> clientHelloGroups;
     private NamedGroup serverHelloGroup = NamedGroup.SECP256R1;
 
     @XmlElementWrapper(name = "clientHelloPointFormats")
     @XmlElement(name = "pointFormat")
-    private List<ECPointFormat> clientHelloPointFormats = List.of(ECPointFormat.UNCOMPRESSED);
+    private List<ECPointFormat> clientHelloPointFormats;
     private ECPointFormat serverHelloPointFormat = ECPointFormat.UNCOMPRESSED;
 
     @XmlElement(name = "dhPrivateKey", defaultValue = "FFFF")
@@ -84,9 +85,15 @@ public class OverlappingAnalysisConfig {
     @XmlElement(name = "FieldConfig", required = true)
     private OverlappingFieldConfig overlappingFieldConfig;
 
-    private OverlappingAnalysisConfig() {}
+    private OverlappingAnalysisConfig() {
+        clientHelloCipherSuites = new ArrayList<>(List.of(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA));
+        clientHelloSignatureAndHashAlgorithms = new ArrayList<>(List.of(SignatureAndHashAlgorithm.RSA_SHA256));
+        clientHelloGroups = new ArrayList<>(List.of(NamedGroup.SECP256R1));
+        clientHelloPointFormats = new ArrayList<>(List.of(ECPointFormat.UNCOMPRESSED));
+    }
 
     public OverlappingAnalysisConfig(OverlappingFieldConfig overlappingFieldConfig) {
+        this();
         this.overlappingFieldConfig = overlappingFieldConfig;
     }
 
@@ -106,12 +113,8 @@ public class OverlappingAnalysisConfig {
         return getOverlappingFieldConfig().getSplitIndex();
     }
 
-    public byte[] getOverlappingBytes() {
-        if (!overlappingFieldConfig.getOverlappingHexBytes().isEmpty()) {
-            return LogUtils.hexToByteArray(overlappingFieldConfig.getOverlappingHexBytes());
-        } else {
-            return getOverlappingFieldConfig().getOverlappingBytes();
-        }
+    public String getOverlappingBytes() {
+        return overlappingFieldConfig.getOverlappingBytes();
     }
 
     public int getAdditionalFragmentIndex() {

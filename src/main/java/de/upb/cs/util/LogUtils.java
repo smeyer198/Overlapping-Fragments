@@ -12,7 +12,7 @@ public class LogUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LogUtils.class);
 
-    public static void logOverlappingFragments(DtlsHandshakeMessageFragment originalFragment, byte[] overlappingBytes, List<DtlsHandshakeMessageFragment> fragments) {
+    public static void logOverlappingFragments(DtlsHandshakeMessageFragment originalFragment, List<DtlsHandshakeMessageFragment> fragments) {
         StringBuilder builder = new StringBuilder();
         builder.append("\n\tOriginal message:  ")
                 .append(byteToHexString(originalFragment.getFragmentContentConfig()));
