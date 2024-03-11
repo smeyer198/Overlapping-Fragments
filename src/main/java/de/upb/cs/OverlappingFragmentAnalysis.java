@@ -1,6 +1,5 @@
 package de.upb.cs;
 
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.layer.constant.LayerConfiguration;
 import de.rub.nds.tlsattacker.core.state.State;
@@ -25,12 +24,11 @@ public class OverlappingFragmentAnalysis {
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingFragmentAnalysis.class);
     private final ConnectionConfig connectionConfig;
     private final OverlappingAnalysisConfig analysisConfig;
-    private final Config tlsAttackerConfig;
 
     public OverlappingFragmentAnalysis(ConnectionConfig connectionConfig, OverlappingAnalysisConfig analysisConfig) {
         this.connectionConfig = connectionConfig;
         this.analysisConfig = analysisConfig;
-        this.tlsAttackerConfig = this.createDtlsConfig();
+        initializeDtlsFields();
     }
 
     public void executeAnalysis() throws OverlappingFragmentException {
@@ -49,73 +47,61 @@ public class OverlappingFragmentAnalysis {
         analysis.analyzeResults();
     }
 
-    public OverlappingAnalysisConfig getAnalysisConfig() {
-        return analysisConfig;
-    }
-
-    public Config getTlsAttackerConfig() {
-        return tlsAttackerConfig;
-    }
-
-    private Config createDtlsConfig() {
-        Config config = new Config();
-
+    private void initializeDtlsFields() {
         // Client connection
-        config.getDefaultClientConnection().setHostname(connectionConfig.getClientHostname());
-        config.getDefaultClientConnection().setPort(connectionConfig.getClientPort());
-        config.getDefaultClientConnection().setTransportHandlerType(TransportHandlerType.UDP);
-        config.getDefaultClientConnection().setTimeout(connectionConfig.getClientTimeout());
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setHostname(connectionConfig.getClientHostname());
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setPort(connectionConfig.getClientPort());
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setTransportHandlerType(TransportHandlerType.UDP);
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setTimeout(connectionConfig.getClientTimeout());
 
         // Server connection
-        config.getDefaultServerConnection().setHostname(connectionConfig.getServerHostname());
-        config.getDefaultServerConnection().setPort(connectionConfig.getServerPort());
-        config.getDefaultServerConnection().setTransportHandlerType(TransportHandlerType.UDP);
-        config.getDefaultServerConnection().setTimeout(connectionConfig.getServerTimeout());
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setHostname(connectionConfig.getServerHostname());
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setPort(connectionConfig.getServerPort());
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setTransportHandlerType(TransportHandlerType.UDP);
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setTimeout(connectionConfig.getServerTimeout());
 
-        // Set DTLS (selectedVersion is used in the records)
-        //config.setDefaultLastRecordProtocolVersion(analysisConfig.getClientHelloVersion());
-        config.setDefaultLayerConfiguration(LayerConfiguration.DTLS);
-        config.setWorkflowExecutorType(WorkflowExecutorType.DTLS);
+        // Set DTLS
+        analysisConfig.getTlsAttackerConfig().setDefaultLayerConfiguration(LayerConfiguration.DTLS);
+        analysisConfig.getTlsAttackerConfig().setWorkflowExecutorType(WorkflowExecutorType.DTLS);
 
-        config.setFinishWithCloseNotify(true);
-        config.setIgnoreRetransmittedCssInDtls(true);
-        config.setAddRetransmissionsToWorkflowTraceInDtls(false);
-        config.setMaxDtlsRetransmissions(0);
+        analysisConfig.getTlsAttackerConfig().setFinishWithCloseNotify(true);
+        analysisConfig.getTlsAttackerConfig().setIgnoreRetransmittedCssInDtls(true);
+        analysisConfig.getTlsAttackerConfig().setAddRetransmissionsToWorkflowTraceInDtls(false);
+        analysisConfig.getTlsAttackerConfig().setMaxDtlsRetransmissions(0);
 
         // If we receive an alert, abort the handshake
-        config.setStopActionsAfterFatal(true);
+        analysisConfig.getTlsAttackerConfig().setStopActionsAfterFatal(true);
         // config.setStopTraceAfterUnexpected(true);
-        config.setStopReceivingAfterFatal(true);
-
-        return config;
+        analysisConfig.getTlsAttackerConfig().setStopReceivingAfterFatal(true);
     }
 
     private AbstractAnalysis getAnalysis() throws OverlappingFragmentException {
-        OverlappingField field = getAnalysisConfig().getOverlappingField();
+        OverlappingField field = analysisConfig.getOverlappingField();
 
         switch (field) {
+            case NO_FIELD:
             case CLIENT_HELLO:
             case CLIENT_HELLO_VERSION:
             case CLIENT_HELLO_CIPHER_SUITE:
             case CLIENT_HELLO_EXTENSION:
-                getAnalysisConfig().setMessageType(HandshakeMessageType.CLIENT_HELLO);
-                return new ClientHelloAnalysis(getTlsAttackerConfig(), getAnalysisConfig());
+                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_HELLO);
+                return new ClientHelloAnalysis(analysisConfig);
             case CLIENT_KEY_EXCHANGE:
             case CLIENT_KEY_EXCHANGE_RSA:
             case CLIENT_KEY_EXCHANGE_DH:
             case CLIENT_KEY_EXCHANGE_ECDH:
-                getAnalysisConfig().setMessageType(HandshakeMessageType.CLIENT_KEY_EXCHANGE);
-                return new ClientKeyExchangeAnalysis(getTlsAttackerConfig(), getAnalysisConfig());
+                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_KEY_EXCHANGE);
+                return new ClientKeyExchangeAnalysis(analysisConfig);
             case SERVER_HELLO:
             case SERVER_HELLO_VERSION:
             case SERVER_HELLO_CIPHER_SUITE:
-                getAnalysisConfig().setMessageType(HandshakeMessageType.SERVER_HELLO);
-                return new ServerHelloAnalysis(getTlsAttackerConfig(), getAnalysisConfig());
+                analysisConfig.setMessageType(HandshakeMessageType.SERVER_HELLO);
+                return new ServerHelloAnalysis(analysisConfig);
             case SERVER_KEY_EXCHANGE:
             case SERVER_KEY_EXCHANGE_DH:
             case SERVER_KEY_EXCHANGE_ECDH:
-                getAnalysisConfig().setMessageType(HandshakeMessageType.SERVER_KEY_EXCHANGE);
-                return new ServerKeyExchangeAnalysis(getTlsAttackerConfig(), getAnalysisConfig());
+                analysisConfig.setMessageType(HandshakeMessageType.SERVER_KEY_EXCHANGE);
+                return new ServerKeyExchangeAnalysis(analysisConfig);
             default:
                 throw new OverlappingFragmentException("Cannot create analysis for field " + field);
         }

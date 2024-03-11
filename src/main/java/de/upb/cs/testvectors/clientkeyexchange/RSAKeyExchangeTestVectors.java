@@ -22,7 +22,7 @@ public class RSAKeyExchangeTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
         fieldConfig.setSplitIndex(2);
 

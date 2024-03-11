@@ -71,7 +71,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>libs/</classpathPrefix>
-                            <mainClass>de.upb.cs.Analysis</mainClass>
+                            <mainClass>de.upb.cs.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

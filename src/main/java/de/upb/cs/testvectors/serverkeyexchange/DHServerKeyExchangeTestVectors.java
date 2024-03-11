@@ -15,7 +15,7 @@ public class DHServerKeyExchangeTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
 
         OverlappingAnalysisConfig analysisConfig = new OverlappingAnalysisConfig(fieldConfig);

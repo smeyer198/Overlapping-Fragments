@@ -26,21 +26,21 @@ public abstract  class AbstractAnalysis {
     private final State state;
     private final DigestHandler digestHandler;
 
-    public AbstractAnalysis(Config config, String aliasContext, OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
+    public AbstractAnalysis(OverlappingAnalysisConfig analysisConfig,String aliasContext) throws OverlappingFragmentException {
         this.analysisConfig = analysisConfig;
         this.aliasContext = aliasContext;
 
         AliasedConnection connection;
         if (aliasContext.equals("client")) {
-            connection = config.getDefaultClientConnection();
+            connection = analysisConfig.getTlsAttackerConfig().getDefaultClientConnection();
         } else if (aliasContext.equals("server")) {
-            connection = config.getDefaultServerConnection();
+            connection = analysisConfig.getTlsAttackerConfig().getDefaultServerConnection();
         } else {
             throw new OverlappingFragmentException("Alias context should be either 'client' or 'server'");
         }
 
         this.trace = new WorkflowTrace(List.of(connection));
-        this.state = new State(config, trace);
+        this.state = new State(analysisConfig.getTlsAttackerConfig(), trace);
         this.digestHandler = new DigestHandler();
 
         this.state.getTlsContext().setFragmentInterceptor(new FragmentInterceptor() {
@@ -79,6 +79,8 @@ public abstract  class AbstractAnalysis {
                 return overlappingFragments;
             }
         });
+
+        LOGGER.info("Using FieldConfig\n{}", analysisConfig.getOverlappingFieldConfig());
     }
 
     public abstract void initializeWorkflowTrace();

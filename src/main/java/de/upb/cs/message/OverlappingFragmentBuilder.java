@@ -14,8 +14,10 @@ public class OverlappingFragmentBuilder {
 
     public static List<DtlsHandshakeMessageFragment> buildOverlappingFragments(DtlsHandshakeMessageFragment originalFragment, OverlappingType type, OverlappingOrder order, int splitIndex, byte[] overlappingBytes, int additionalFragmentIndex) throws OverlappingFragmentException {
         switch (type) {
-            case NO_OVERLAPPING_TYPE:
+            case NO_OVERLAPPING_BYTES:
                 return buildFragmentsWithoutOverlappingBytes(originalFragment, splitIndex, order);
+            case COMPLETE_MESSAGE:
+                return buildFragmentsForCompleteMessage(originalFragment, splitIndex, overlappingBytes, order, additionalFragmentIndex);
             case CONSECUTIVE_TYPE_A:
                 return buildConsecutiveTypeAFragments(originalFragment, splitIndex, overlappingBytes, order, additionalFragmentIndex);
             case CONSECUTIVE_TYPE_B:
@@ -29,7 +31,11 @@ public class OverlappingFragmentBuilder {
         }
     }
 
-    private static List<DtlsHandshakeMessageFragment> buildFragmentsWithoutOverlappingBytes(DtlsHandshakeMessageFragment originalFragment, int splitIndex, OverlappingOrder order) throws OverlappingFragmentException {
+    private static List<DtlsHandshakeMessageFragment> buildFragmentsWithoutOverlappingBytes(
+            DtlsHandshakeMessageFragment originalFragment,
+            int splitIndex,
+            OverlappingOrder order
+    ) throws OverlappingFragmentException {
         // Split the original message at splitIndex
         byte[] originalData = originalFragment.getFragmentContentConfig();
         byte[] firstFragmentData = Arrays.copyOfRange(originalData, 0, splitIndex);
@@ -52,6 +58,37 @@ public class OverlappingFragmentBuilder {
         );
 
         return orderFragments(firstFragment, secondFragment, order);
+    }
+
+    private static List<DtlsHandshakeMessageFragment> buildFragmentsForCompleteMessage(
+           DtlsHandshakeMessageFragment originalFragment,
+           int splitIndex,
+           byte[] overlappingBytes,
+           OverlappingOrder order,
+           int additionalFragmentIndex
+    ) throws OverlappingFragmentException {
+        byte[] originalData = originalFragment.getFragmentContentConfig();
+        byte[] firstData = Arrays.copyOfRange(originalData, 0, splitIndex);
+        byte[] secondData = Arrays.copyOfRange(originalData, splitIndex + overlappingBytes.length, originalData.length);
+        byte[] modifiedData = ArrayConverter.concatenate(firstData, overlappingBytes, secondData);
+
+        DtlsHandshakeMessageFragment manipulatedFragment = new DtlsHandshakeMessageFragment(
+                originalFragment.getHandshakeMessageTypeConfig(),
+                modifiedData,
+                originalFragment.getMessageSequenceConfig(),
+                originalFragment.getOffsetConfig(),
+                originalFragment.getHandshakeMessageLengthConfig()
+        );
+
+        if (additionalFragmentIndex == 0) {
+            return orderFragments(originalFragment, manipulatedFragment, order);
+        }
+
+        // Cut the corresponding bytes from both fragments, the second fragment in both lists are equal
+        List<DtlsHandshakeMessageFragment> originalFragments = buildAdditionalFragment(originalFragment, additionalFragmentIndex);
+        List<DtlsHandshakeMessageFragment> manipulatedFragments = buildAdditionalFragment(manipulatedFragment, additionalFragmentIndex);
+
+        return orderFragments(originalFragments.get(0), manipulatedFragments.get(0), order, originalFragments.get(1));
     }
 
     private static List<DtlsHandshakeMessageFragment> buildConsecutiveTypeAFragments(
@@ -87,32 +124,30 @@ public class OverlappingFragmentBuilder {
                 originalFragment.getHandshakeMessageLengthConfig()
         );
 
-        if (additionalFragmentIndex == 0) {
-            return orderFragments(firstFragment, secondFragment, order);
-        }
-
-        List<DtlsHandshakeMessageFragment> additionalFragments;
-
         if (additionalFragmentIndex < 0) {
-            if (order == OverlappingOrder.ORIGINAL) {
-                additionalFragments = buildAdditionalFragment(secondFragment, additionalFragmentIndex);
+            byte[] additionalData = Arrays.copyOfRange(originalData, splitIndex, originalData.length);
 
-                return orderFragments(firstFragment, additionalFragments.get(0), order, additionalFragments.get(1));
-            } else {
-                additionalFragments = buildAdditionalFragment(secondFragment, additionalFragmentIndex);
+            DtlsHandshakeMessageFragment additionalFragment = new DtlsHandshakeMessageFragment(
+                    originalFragment.getHandshakeMessageTypeConfig(),
+                    additionalData,
+                    originalFragment.getMessageSequenceConfig(),
+                    originalFragment.getOffsetConfig() + firstFragmentData.length,
+                    originalFragment.getHandshakeMessageLengthConfig()
+            );
+            return orderFragments(firstFragment, secondFragment, order, additionalFragment);
+        } else if (additionalFragmentIndex > 0) {
+            byte[] additionalData = Arrays.copyOfRange(originalData, 0, splitIndex - overlappingBytes.length);
 
-                return orderFragments(firstFragment, additionalFragments.get(0), order, additionalFragments.get(1));
-            }
+            DtlsHandshakeMessageFragment additionalFragment = new DtlsHandshakeMessageFragment(
+                    originalFragment.getHandshakeMessageTypeConfig(),
+                    additionalData,
+                    originalFragment.getMessageSequenceConfig(),
+                    originalFragment.getOffsetConfig(),
+                    originalFragment.getHandshakeMessageLengthConfig()
+            );
+            return orderFragments(firstFragment, secondFragment, order, additionalFragment);
         } else {
-            if (order == OverlappingOrder.ORIGINAL) {
-                additionalFragments = buildAdditionalFragment(firstFragment, additionalFragmentIndex);
-
-                return orderFragments(additionalFragments.get(1), secondFragment, order, additionalFragments.get(0));
-            } else {
-                additionalFragments = buildAdditionalFragment(firstFragment, additionalFragmentIndex);
-
-                return orderFragments(secondFragment, additionalFragments.get(1), order, additionalFragments.get(0));
-            }
+            return orderFragments(firstFragment, secondFragment, order);
         }
     }
 
@@ -145,12 +180,31 @@ public class OverlappingFragmentBuilder {
                 originalFragment.getHandshakeMessageLengthConfig()
         );
 
-        if (additionalFragmentIndex == 0) {
+        if (additionalFragmentIndex < 0) {
+            byte[] additionalData = Arrays.copyOfRange(originalData, splitIndex + overlappingBytes.length, originalData.length);
+
+            DtlsHandshakeMessageFragment additionalFragment = new DtlsHandshakeMessageFragment(
+                    originalFragment.getHandshakeMessageTypeConfig(),
+                    additionalData,
+                    originalFragment.getMessageSequenceConfig(),
+                    originalFragment.getOffsetConfig() + firstFragmentData.length + overlappingBytes.length,
+                    originalFragment.getHandshakeMessageLengthConfig()
+            );
+            return orderFragments(firstFragment, secondFragment, order, additionalFragment);
+        } else if (additionalFragmentIndex > 0) {
+            byte[] additionalData = Arrays.copyOfRange(originalData, 0, splitIndex);
+
+            DtlsHandshakeMessageFragment additionalFragment = new DtlsHandshakeMessageFragment(
+                    originalFragment.getHandshakeMessageTypeConfig(),
+                    additionalData,
+                    originalFragment.getMessageSequenceConfig(),
+                    originalFragment.getOffsetConfig(),
+                    originalFragment.getHandshakeMessageLengthConfig()
+            );
+            return orderFragments(firstFragment, secondFragment, order, additionalFragment);
+        } else {
             return orderFragments(firstFragment, secondFragment, order);
         }
-
-        List<DtlsHandshakeMessageFragment> additionalFragments = buildAdditionalFragment(secondFragment, additionalFragmentIndex);
-        return orderFragments(additionalFragments.get(0), firstFragment, order, additionalFragments.get(1));
     }
 
     private static List<DtlsHandshakeMessageFragment> buildSubsequentTypeAFragments(

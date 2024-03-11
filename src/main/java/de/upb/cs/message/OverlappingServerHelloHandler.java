@@ -10,8 +10,8 @@ import java.util.List;
 
 public class OverlappingServerHelloHandler extends OverlappingMessageHandler {
 
-    public OverlappingServerHelloHandler(Config config, OverlappingAnalysisConfig analysisConfig) {
-        super(config, analysisConfig);
+    public OverlappingServerHelloHandler(OverlappingAnalysisConfig analysisConfig) {
+        super(analysisConfig);
     }
 
     @Override

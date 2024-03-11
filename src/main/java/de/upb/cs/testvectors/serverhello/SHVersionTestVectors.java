@@ -3,7 +3,6 @@ package de.upb.cs.testvectors.serverhello;
 import de.rub.nds.tlsattacker.core.constants.CipherSuite;
 import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
 import de.upb.cs.config.OverlappingAnalysisConfig;
-import de.upb.cs.config.ConnectionConfig;
 import de.upb.cs.config.OverlappingField;
 import de.upb.cs.config.OverlappingFieldConfig;
 import de.upb.cs.config.OverlappingOrder;
@@ -22,7 +21,7 @@ public class SHVersionTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytesOriginalOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.SERVER_HELLO);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
         fieldConfig.setSplitIndex(2);
 
@@ -35,7 +34,7 @@ public class SHVersionTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytesReversedOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.SERVER_HELLO);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
         fieldConfig.setSplitIndex(2);
 

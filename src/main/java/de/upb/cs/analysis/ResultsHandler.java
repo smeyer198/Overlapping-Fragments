@@ -1,18 +1,14 @@
 package de.upb.cs.analysis;
 
-import de.rub.nds.modifiablevariable.util.ArrayConverter;
 import de.rub.nds.tlsattacker.core.constants.AlertDescription;
 import de.rub.nds.tlsattacker.core.constants.HandshakeByteLength;
 import de.rub.nds.tlsattacker.core.constants.PRFAlgorithm;
-import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
 import de.rub.nds.tlsattacker.core.crypto.MessageDigestCollector;
 import de.rub.nds.tlsattacker.core.crypto.PseudoRandomFunction;
-import de.rub.nds.tlsattacker.core.crypto.SignatureCalculator;
 import de.rub.nds.tlsattacker.core.exceptions.CryptoException;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.AlertMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTraceUtil;
@@ -20,15 +16,10 @@ import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.message.DigestHandler;
+import de.upb.cs.util.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.crypto.Cipher;
-import java.math.BigInteger;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 
 public class ResultsHandler {
@@ -66,73 +57,14 @@ public class ResultsHandler {
 
     public void inspectHandshakeParameters() {
         String hp = "Handshake parameters:" + "\n\t" +
-                "Proposed DTLS version: " + context.getHighestClientProtocolVersion() +
+                "Proposed DTLS version: " + context.getChooser().getHighestProtocolVersion() +
                 "\n\tSelected DTLS version: " + context.getSelectedProtocolVersion() +
-                "\n\tProposed Cipher Suite: " + context.getClientSupportedCipherSuites() +
+                "\n\tProposed Cipher Suite: " + context.getChooser().getClientSupportedCipherSuites() +
                 "\n\tSelected Cipher Suite: " + context.getSelectedCipherSuite() +
-                "\n\tProposed SignatureAndHashAlgorithms: " + context.getClientSupportedSignatureAndHashAlgorithms() +
+                "\n\tProposed SignatureAndHashAlgorithms: " + context.getChooser().getClientSupportedSignatureAndHashAlgorithms() +
                 "\n\tSelected SignatureAndHashAlgorithm: " + context.getSelectedSignatureAndHashAlgorithm() +
                 "\n";
         LOGGER.info(hp);
-    }
-
-    public void verifyCertificateVerifyMessage() {
-        CertificateVerifyMessage certificateVerifyMessage = trace.getLastReceivedMessage(CertificateVerifyMessage.class);
-
-        MessageDigestCollector originalTraceDigest = digestHandler.parseWorkflowTraceForCertificateVerify(trace, context, analysisConfig.getMessageType(), false);
-        MessageDigestCollector manipulatedTraceDigest = digestHandler.parseWorkflowTraceForCertificateVerify(trace, context, analysisConfig.getMessageType(), true);
-
-        try {
-            SignatureAndHashAlgorithm algorithm = context.getChooser().getSelectedSigHashAlgorithm();
-            byte[] originalSignature = SignatureCalculator.generateSignature(algorithm, context.getChooser(), originalTraceDigest.getRawBytes());
-            byte[] manipulatedSignature = SignatureCalculator.generateSignature(algorithm, context.getChooser(), manipulatedTraceDigest.getRawBytes());
-
-            if (certificateVerifyMessage != null) {
-                byte[] certificateVerifyData = certificateVerifyMessage.getSignature().getValue();
-                byte[] decryptedSignature = verifySignature(certificateVerifyData);
-
-                LOGGER.debug("Signature:\n" +
-                                "\tCertificateVerify: {}\n" +
-                                "\tOriginal:          {}\n" +
-                                "\tManipulated:       {}\n" +
-                                "\t                   {}\n",
-                        certificateVerifyData, originalSignature, manipulatedSignature, decryptedSignature);
-            } else {
-                LOGGER.error("Did not receive CertificateVerify message");
-            }
-        } catch (CryptoException e) {
-            LOGGER.error("Error while computing the CertificateVerify signature");
-        }
-    }
-
-    private byte[] verifySignature(byte[] data) {
-        BigInteger n = context.getClientRsaModulus();
-        BigInteger e = context.getClientRSAPublicKey();
-
-        BigInteger s = new BigInteger(data);
-        BigInteger decrypted = s.modPow(e, n);
-
-        return ArrayConverter.bigIntegerToByteArray(decrypted);
-    }
-
-    private byte[] decryptSignature(byte[] data) {
-        BigInteger n = context.getChooser().getClientRsaModulus();
-        BigInteger e = context.getChooser().getClientRSAPublicKey();
-
-        try {
-            KeyFactory factory = KeyFactory.getInstance("RSA");
-            RSAPublicKeySpec keySpec = new RSAPublicKeySpec(n, e);
-            RSAPublicKey publicKey = (RSAPublicKey) factory.generatePublic(keySpec);
-
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.DECRYPT_MODE, publicKey);
-
-            return cipher.doFinal(data);
-        } catch (GeneralSecurityException ex) {
-            LOGGER.error("Unable to verify signature");
-
-            return null;
-        }
     }
 
     public void verifyClientFinishedMessage() {
@@ -182,11 +114,13 @@ public class ResultsHandler {
 
             if (finishedMessage != null) {
                 byte[] finishedVerifyData = finishedMessage.getVerifyData().getValue();
-                LOGGER.debug("VerifyData:\n" +
+                LOGGER.info("VerifyData:\n" +
                                 "\tFinished:    {}\n" +
                                 "\tOriginal:    {}\n" +
                                 "\tManipulated: {}\n",
-                        finishedVerifyData, verifyDataOriginalTrace, verifyDataManipulatedTrace);
+                        LogUtils.byteToHexString(finishedVerifyData),
+                        LogUtils.byteToHexString(verifyDataOriginalTrace),
+                        LogUtils.byteToHexString(verifyDataManipulatedTrace));
 
                 if (Arrays.equals(finishedVerifyData, verifyDataOriginalTrace)) {
                     if (!analysisConfig.isOverlappingBytesInDigest()) {
@@ -204,19 +138,15 @@ public class ResultsHandler {
             } else {
                 if (isDecryptError()) {
                     if (analysisConfig.isOverlappingBytesInDigest()) {
-                        LOGGER.info("Server interpreted original bytes, but ClientFinished contained manipulated bytes");
+                        LOGGER.info("Server interpreted original bytes, ClientFinished contained manipulated bytes");
                     } else {
-                        LOGGER.info("Server interpreted manipulated bytes, but ClientFinished contained original bytes");
+                        LOGGER.info("Server interpreted manipulated bytes, ClientFinished contained original bytes");
                     }
                 }
             }
         } catch (CryptoException e) {
             LOGGER.error("Error while computing the verify data bytes");
         }
-    }
-
-    private void logFinishedResults(FinishedMessage finishedMessage, byte[] verifyDataOriginalTrace, byte[] verifyDataManipulatedTrace, String sendingPeer, String receivingPeer) {
-
     }
 
     private byte[] computeVerifyData(MessageDigestCollector digest, String finishedLabel) throws CryptoException {
@@ -248,32 +178,4 @@ public class ResultsHandler {
         return false;
     }
 
-    public void checkForExploit() {
-        if (!trace.executedAsPlanned()) {
-            MessageAction failingAction = (MessageAction) WorkflowTraceUtil.getFirstFailedAction(trace);
-
-            LOGGER.info("Handshake not executed as planned. Received error message\n{}", failingAction.getMessages());
-            return;
-        }
-
-        if (analysisConfig.isOverlappingBytesInDigest()) {
-            LOGGER.info("Cannot find exploit if manipulated bytes are used in FinishedMessage");
-            return;
-        }
-
-        switch (analysisConfig.getOverlappingField()) {
-            case CLIENT_HELLO_VERSION:
-                if (context.getHighestClientProtocolVersion() != context.getSelectedProtocolVersion()) {
-                    LOGGER.info("Found exploit for ClientHello version");
-                }
-                break;
-            case CLIENT_HELLO_CIPHER_SUITE:
-                if (context.getClientSupportedCipherSuites().get(0) != context.getSelectedCipherSuite()) {
-                    LOGGER.info("Found exploit for ClientHello cipher suites");
-                }
-                break;
-            default:
-                LOGGER.info("No exploit found");
-        }
-    }
 }

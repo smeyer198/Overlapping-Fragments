@@ -1,6 +1,5 @@
 package de.upb.cs.analysis;
 
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateRequestMessage;
@@ -28,10 +27,10 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyExchangeAnalysis.class);
     private final OverlappingClientKeyExchangeHandler clientKeyExchangeHandler;
 
-    public ClientKeyExchangeAnalysis(Config config, OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
-        super(config, "client", analysisConfig);
+    public ClientKeyExchangeAnalysis(OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
+        super(analysisConfig, "client");
 
-        this.clientKeyExchangeHandler = new OverlappingClientKeyExchangeHandler(getConfig(), getAnalysisConfig());
+        this.clientKeyExchangeHandler = new OverlappingClientKeyExchangeHandler(getAnalysisConfig());
     }
 
     @Override

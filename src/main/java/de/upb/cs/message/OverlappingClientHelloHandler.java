@@ -1,17 +1,16 @@
 package de.upb.cs.message;
 
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
-import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.analysis.OverlappingFragmentException;
+import de.upb.cs.config.OverlappingAnalysisConfig;
 
 import java.util.List;
 
 public class OverlappingClientHelloHandler extends OverlappingMessageHandler {
 
-    public OverlappingClientHelloHandler(Config config, OverlappingAnalysisConfig analysisConfig) {
-        super(config, analysisConfig);
+    public OverlappingClientHelloHandler(OverlappingAnalysisConfig analysisConfig) {
+        super(analysisConfig);
     }
 
     @Override

@@ -21,8 +21,8 @@ public class OverlappingServerKeyExchangeHandler extends OverlappingMessageHandl
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingServerKeyExchangeHandler.class);
 
-    public OverlappingServerKeyExchangeHandler(Config config, OverlappingAnalysisConfig analysisConfig) {
-        super(config, analysisConfig);
+    public OverlappingServerKeyExchangeHandler(OverlappingAnalysisConfig analysisConfig) {
+        super(analysisConfig);
     }
 
     @Override

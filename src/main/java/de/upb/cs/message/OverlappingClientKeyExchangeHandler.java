@@ -1,7 +1,6 @@
 package de.upb.cs.message;
 
 import de.rub.nds.modifiablevariable.util.ArrayConverter;
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.NamedGroup;
 import de.rub.nds.tlsattacker.core.crypto.ec.Point;
 import de.rub.nds.tlsattacker.core.crypto.ec.PointFormatter;
@@ -21,8 +20,8 @@ public class OverlappingClientKeyExchangeHandler extends OverlappingMessageHandl
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingClientKeyExchangeHandler.class);
 
-    public OverlappingClientKeyExchangeHandler(Config config, OverlappingAnalysisConfig analysisConfig) {
-        super(config, analysisConfig);
+    public OverlappingClientKeyExchangeHandler(OverlappingAnalysisConfig analysisConfig) {
+        super(analysisConfig);
     }
 
     @Override

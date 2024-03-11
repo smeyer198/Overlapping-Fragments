@@ -38,7 +38,7 @@ public class ECDHClientKeyExchangeTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.CLIENT_KEY_EXCHANGE_ECDH);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
         fieldConfig.setSplitIndex(1);
 

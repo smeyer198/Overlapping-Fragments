@@ -16,8 +16,8 @@ public class CHCipherSuiteTestVectors {
     private static final String cipherSuite = "c0 2c c0 2b";// new byte[]{(byte) 0xc0, (byte) 0x2c, (byte) 0xc0, (byte) 0x2b};
     private static final String cipherSuiteByte = "2c";
     private static final List<CipherSuite> supportedCipherSuites = Arrays.asList(
-            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-            //CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+            //CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+            CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
             //CipherSuite.TLS_RSA_WITH_AES_256_CBC_SHA
             //CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA
             //CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA
@@ -26,7 +26,7 @@ public class CHCipherSuiteTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytesOriginalOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.CLIENT_HELLO_CIPHER_SUITE);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
         fieldConfig.setSplitIndex(2);
 
@@ -38,7 +38,7 @@ public class CHCipherSuiteTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytesReversedOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.CLIENT_HELLO_CIPHER_SUITE);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
         fieldConfig.setSplitIndex(2);
 

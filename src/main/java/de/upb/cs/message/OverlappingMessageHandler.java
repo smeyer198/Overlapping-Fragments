@@ -3,7 +3,6 @@ package de.upb.cs.message;
 import de.rub.nds.tlsattacker.core.certificate.CertificateKeyPair;
 import de.rub.nds.tlsattacker.core.certificate.PemUtil;
 import de.rub.nds.tlsattacker.core.config.Config;
-import de.rub.nds.tlsattacker.core.constants.CompressionMethod;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.upb.cs.config.OverlappingAnalysisConfig;
@@ -30,16 +29,16 @@ public abstract class OverlappingMessageHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingFieldConfig.class);
 
-    private final Config config;
     private final OverlappingAnalysisConfig analysisConfig;
 
-    public OverlappingMessageHandler(Config pConfig, OverlappingAnalysisConfig analysisConfig) {
-        this.config = pConfig;
+    public OverlappingMessageHandler(OverlappingAnalysisConfig analysisConfig) {
         this.analysisConfig = analysisConfig;
+
+        Config config = analysisConfig.getTlsAttackerConfig();
 
         // Set the fields for the client messages
         // config.setDefaultHighestClientProtocolVersion(analysisConfig.getDtlsVersion());
-        config.setHighestProtocolVersion(analysisConfig.getClientHelloVersion());
+        /*config.setHighestProtocolVersion(analysisConfig.getClientHelloVersion());
         config.setDefaultClientSupportedCipherSuites(analysisConfig.getClientHelloCipherSuites());
         config.setDefaultClientSupportedCompressionMethods(CompressionMethod.NULL);
         config.setAddSignatureAndHashAlgorithmsExtension(true);
@@ -48,7 +47,7 @@ public abstract class OverlappingMessageHandler {
         config.setDefaultClientSupportedPointFormats(analysisConfig.getClientHelloPointFormats());
         config.setAddEllipticCurveExtension(analysisConfig.isAddEllipticCurveExtension());
         config.setDefaultClientNamedGroups(analysisConfig.getClientHelloGroups());
-        config.setAddRenegotiationInfoExtension(analysisConfig.isAddRenegotiationInfoExtension());
+        config.setAddRenegotiationInfoExtension(analysisConfig.isAddRenegotiationInfoExtension());*/
 
         CertificateKeyPair keyPair = loadCertificate();
         if (keyPair != null) {
@@ -57,14 +56,14 @@ public abstract class OverlappingMessageHandler {
         }
 
         // Set the fields for the server messages
-        config.setDefaultSelectedProtocolVersion(analysisConfig.getServerHelloVersion());
+        /*config.setDefaultSelectedProtocolVersion(analysisConfig.getServerHelloVersion());
         config.setDefaultServerSupportedCipherSuites(analysisConfig.getServerHelloCipherSuite());
         config.setDefaultServerSupportedCompressionMethods(CompressionMethod.NULL);
         config.setDefaultServerSupportedSignatureAndHashAlgorithms(analysisConfig.getServerHelloSignatureAndHashAlgorithm());
         config.setDefaultServerSupportedPointFormats(analysisConfig.getServerHelloPointFormat());
-        config.setDefaultSelectedNamedGroup(analysisConfig.getServerHelloGroup());
+        config.setDefaultSelectedNamedGroup(analysisConfig.getServerHelloGroup());*/
 
-        config.setIndividualTransportPacketsForFragments(analysisConfig.isIndividualTransportPacketsForFragments());
+        config.setIndividualTransportPacketsForFragments(analysisConfig.isUseIndividualDatagrams());
     }
 
     private CertificateKeyPair loadCertificate() {
@@ -86,7 +85,7 @@ public abstract class OverlappingMessageHandler {
     }
 
     public Config getConfig() {
-        return config;
+        return analysisConfig.getTlsAttackerConfig();
     }
 
     public OverlappingAnalysisConfig getAnalysisConfig() {

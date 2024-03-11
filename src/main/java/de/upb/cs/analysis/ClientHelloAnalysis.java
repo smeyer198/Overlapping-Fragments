@@ -1,6 +1,5 @@
 package de.upb.cs.analysis;
 
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateRequestMessage;
@@ -20,20 +19,22 @@ import de.upb.cs.action.AdvancedChangeCipherSuiteAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.message.OverlappingClientHelloHandler;
+import de.upb.cs.util.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHelloAnalysis extends AbstractAnalysis {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyExchangeAnalysis.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientHelloAnalysis.class);
     private final OverlappingClientHelloHandler clientHelloHandler;
 
-    public ClientHelloAnalysis(Config config, OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
-        super(config, "client", analysisConfig);
+    public ClientHelloAnalysis(OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
+        super(analysisConfig, "client");
 
-        this.clientHelloHandler = new OverlappingClientHelloHandler(getConfig(), getAnalysisConfig());
+        this.clientHelloHandler = new OverlappingClientHelloHandler(getAnalysisConfig());
     }
 
     @Override
@@ -87,6 +88,12 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
             return originalFragments;
         }
 
+        /* Relevant for PionDTLS
+        if (getTlsContext().getDtlsCookie().length == 0) {
+            updateMessageContent(mergedFragment);
+            return new ArrayList<>(List.of(mergedFragment));
+        }*/
+
         // Check, whether the first CH message should be fragmented
         if (skipFragmentingFirstMessage()) {
             return originalFragments;
@@ -112,11 +119,18 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
         resultsHandler.inspectHandshakeParameters();
 
         resultsHandler.verifyServerFinishedMessage();
-        // resultsHandler.checkForExploit();
     }
 
     private boolean skipFragmentingFirstMessage() {
         byte[] cookie = getTlsContext().getDtlsCookie();
         return cookie.length == 0 && !getAnalysisConfig().isFragmentFirstCHMessage();
+    }
+
+    public void updateMessageContent(DtlsHandshakeMessageFragment fragment) {
+        byte[] fragmentContent = fragment.getFragmentContentConfig();
+        fragmentContent[39] = (byte) 0x2b;
+        fragment.setFragmentContentConfig(fragmentContent);
+        LOGGER.info(LogUtils.byteToHexString(fragmentContent));
+        LOGGER.info(LogUtils.byteToHexString(fragment.getFragmentContentConfig()));
     }
 }

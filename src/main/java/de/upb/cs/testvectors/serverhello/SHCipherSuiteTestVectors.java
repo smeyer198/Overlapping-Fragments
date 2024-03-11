@@ -32,7 +32,7 @@ public class SHCipherSuiteTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytesOriginalOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.SERVER_HELLO);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
         fieldConfig.setSplitIndex(10);
 
@@ -45,7 +45,7 @@ public class SHCipherSuiteTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytesReversedOrder() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.SERVER_HELLO);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.REVERSED);
         fieldConfig.setSplitIndex(10);
 

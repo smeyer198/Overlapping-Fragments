@@ -27,44 +27,9 @@ public class OverlappingFieldConfig {
     @XmlElement(name = "additionalFragmentIndex", defaultValue = "0")
     private int additionalFragmentIndex;
 
-    /**
-     * ClientHello and ServerHello
-     *
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, String overlappingBytes) {
-        this(field, type, order, splitIndex, overlappingBytes, 0);
-    }*/
-
-    /**
-     * ClientKeyExchange
-     *
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex) {
-        this(field, type, order, splitIndex, "");
-    }*/
-
-    /**
-     * ServerKeyExchange
-     *
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order) {
-        this(field, type, order, 0, "", 0);
-    }*/
-
-    /*
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, int additionalFragmentIndex) {
-        this(field, type, order, splitIndex, "", additionalFragmentIndex);
-    }*/
-    /*
-    public OverlappingFieldConfig(OverlappingField field, OverlappingType type, OverlappingOrder order, int splitIndex, String overlappingBytes, int additionalFragmentIndex) {
-        this.overlappingField = field;
-        this.overlappingType = type;
-        this.overlappingOrder = order;
-        this.splitIndex = splitIndex;
-        this.overlappingBytes = overlappingBytes;
-        this.additionalFragmentIndex = additionalFragmentIndex;
-    }*/
-
     public OverlappingFieldConfig() {
         this.overlappingField = OverlappingField.NO_FIELD;
-        this.overlappingType = OverlappingType.NO_OVERLAPPING_TYPE;
+        this.overlappingType = OverlappingType.NO_OVERLAPPING_BYTES;
         this.overlappingOrder = OverlappingOrder.ORIGINAL;
         this.splitIndex = 0;
         this.overlappingBytes = "";
@@ -121,7 +86,7 @@ public class OverlappingFieldConfig {
 
     @Override
     public String toString() {
-        return "[\tField: " + overlappingField +
+        return "[\n\tField: " + overlappingField +
                 "\n\tType: " + overlappingType +
                 "\n\tOrder: " + overlappingOrder +
                 "\n\tSplit Index: " + splitIndex +

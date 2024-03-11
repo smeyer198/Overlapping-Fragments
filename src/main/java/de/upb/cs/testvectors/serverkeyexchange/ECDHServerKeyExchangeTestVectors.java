@@ -8,8 +8,6 @@ import de.upb.cs.config.OverlappingFieldConfig;
 import de.upb.cs.config.OverlappingOrder;
 import de.upb.cs.config.OverlappingType;
 
-import java.math.BigInteger;
-
 public class ECDHServerKeyExchangeTestVectors {
 
     private static final CipherSuite serverHelloCipherSuite = CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384;
@@ -20,7 +18,7 @@ public class ECDHServerKeyExchangeTestVectors {
     public static OverlappingAnalysisConfig noOverlappingBytes() {
         OverlappingFieldConfig fieldConfig = new OverlappingFieldConfig();
         fieldConfig.setOverlappingField(OverlappingField.SERVER_KEY_EXCHANGE);
-        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_TYPE);
+        fieldConfig.setOverlappingType(OverlappingType.NO_OVERLAPPING_BYTES);
         fieldConfig.setOverlappingOrder(OverlappingOrder.ORIGINAL);
         fieldConfig.setSplitIndex(20);
 

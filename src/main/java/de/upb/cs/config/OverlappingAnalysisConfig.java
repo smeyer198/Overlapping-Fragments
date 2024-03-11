@@ -1,5 +1,6 @@
 package de.upb.cs.config;
 
+import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.CipherSuite;
 import de.rub.nds.tlsattacker.core.constants.ECPointFormat;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
@@ -13,62 +14,37 @@ import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @XmlRootElement(name = "AnalysisConfig")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlAccessorType(XmlAccessType.NONE)
 public class OverlappingAnalysisConfig {
 
-    @XmlTransient
-    private HandshakeMessageType messageType;
+    private final Config tlsAttackerConfig;
 
-    private ProtocolVersion clientHelloVersion = ProtocolVersion.DTLS12;
-    private ProtocolVersion serverHelloVersion = ProtocolVersion.DTLS12;
+    @XmlElement(name = "FieldConfig")
+    private OverlappingFieldConfig overlappingFieldConfig;
 
-    @XmlElementWrapper(name = "clientHelloCipherSuites")
-    @XmlElement(name = "cipherSuite")
-    private List<CipherSuite> clientHelloCipherSuites;
-    private CipherSuite serverHelloCipherSuite = CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA;
-
-    @XmlElementWrapper(name = "clientHelloSignatureAndHashAlgorithms")
-    @XmlElement(name = "signatureAndHashAlgorithm")
-    private List<SignatureAndHashAlgorithm> clientHelloSignatureAndHashAlgorithms;
-    private SignatureAndHashAlgorithm serverHelloSignatureAndHashAlgorithm = SignatureAndHashAlgorithm.RSA_SHA256;
-
-    @XmlElementWrapper(name = "clientHelloGroups")
-    @XmlElement(name = "group")
-    private List<NamedGroup> clientHelloGroups;
-    private NamedGroup serverHelloGroup = NamedGroup.SECP256R1;
-
-    @XmlElementWrapper(name = "clientHelloPointFormats")
-    @XmlElement(name = "pointFormat")
-    private List<ECPointFormat> clientHelloPointFormats;
-    private ECPointFormat serverHelloPointFormat = ECPointFormat.UNCOMPRESSED;
-
-    @XmlElement(name = "dhPrivateKey", defaultValue = "FFFF")
+    @XmlElement(name = "dhPrivateKey")
     private String dhPrivateKey = "FFFF";
 
-    @XmlElement(name = "ecPrivateKey", defaultValue = "3")
+    @XmlElement(name = "ecPrivateKey")
     private String ecPrivateKey = "3";
 
+    @XmlElement(name = "useUpdatedKeys")
     private boolean useUpdatedKeys = false;
 
-    private boolean addECPointFormatExtension = false;
-    private boolean addEllipticCurveExtension = false;
-
-    private boolean addRenegotiationInfoExtension = true;
-
+    @XmlElement(name = "fragmentFirstCHMessage")
     private boolean fragmentFirstCHMessage = false;
 
+    @XmlElement(name = "clientAuthentication")
     private boolean clientAuthentication = false;
 
+    @XmlElement(name = "overlappingBytesInDigest")
     private boolean overlappingBytesInDigest = false;
 
+    @XmlElement(name = "cookieExchange")
     private boolean cookieExchange = true;
-
-    private boolean individualTransportPacketsForFragments = true;
 
     @XmlElement(name = "certificatePath", defaultValue = "")
     private String certificatePath = "";
@@ -77,24 +53,42 @@ public class OverlappingAnalysisConfig {
     private String certificateKeyPath = "";
 
     /** Relevant for version in ServerHello */
+    @XmlElement(name = "updateProtocolVersion")
     private ProtocolVersion updateProtocolVersion = null;
 
     /** Relevant for cipher suite in ServerHello */
+    @XmlElement(name = "updateCipherSuite")
     private CipherSuite updateCipherSuite = null;
 
-    @XmlElement(name = "FieldConfig", required = true)
-    private OverlappingFieldConfig overlappingFieldConfig;
+    @XmlTransient
+    private HandshakeMessageType messageType;
 
     private OverlappingAnalysisConfig() {
-        clientHelloCipherSuites = new ArrayList<>(List.of(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA));
-        clientHelloSignatureAndHashAlgorithms = new ArrayList<>(List.of(SignatureAndHashAlgorithm.RSA_SHA256));
-        clientHelloGroups = new ArrayList<>(List.of(NamedGroup.SECP256R1));
-        clientHelloPointFormats = new ArrayList<>(List.of(ECPointFormat.UNCOMPRESSED));
+        tlsAttackerConfig = new Config();
+
+        tlsAttackerConfig.setHighestProtocolVersion(ProtocolVersion.DTLS12);
+        tlsAttackerConfig.setDefaultClientSupportedCipherSuites(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+        tlsAttackerConfig.setAddSignatureAndHashAlgorithmsExtension(true);
+        tlsAttackerConfig.setDefaultClientSupportedSignatureAndHashAlgorithms(SignatureAndHashAlgorithm.RSA_SHA256);
+        tlsAttackerConfig.setAddEllipticCurveExtension(false);
+        tlsAttackerConfig.setDefaultClientNamedGroups(NamedGroup.SECP256R1);
+        tlsAttackerConfig.setAddECPointFormatExtension(false);
+        tlsAttackerConfig.setDefaultClientSupportedPointFormats(ECPointFormat.UNCOMPRESSED);
+
+        tlsAttackerConfig.setDefaultSelectedProtocolVersion(ProtocolVersion.DTLS12);
+        tlsAttackerConfig.setDefaultSelectedCipherSuite(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+        tlsAttackerConfig.setDefaultSelectedSignatureAndHashAlgorithm(SignatureAndHashAlgorithm.RSA_SHA256);
+        tlsAttackerConfig.setDefaultSelectedNamedGroup(NamedGroup.SECP256R1);
+        tlsAttackerConfig.setDefaultSelectedPointFormat(ECPointFormat.UNCOMPRESSED);
     }
 
     public OverlappingAnalysisConfig(OverlappingFieldConfig overlappingFieldConfig) {
         this();
         this.overlappingFieldConfig = overlappingFieldConfig;
+    }
+
+    public Config getTlsAttackerConfig() {
+        return tlsAttackerConfig;
     }
 
     public OverlappingField getOverlappingField() {
@@ -129,108 +123,134 @@ public class OverlappingAnalysisConfig {
         this.messageType = messageType;
     }
 
+    @XmlElement(name = "clientHelloVersion")
     public ProtocolVersion getClientHelloVersion() {
-        return clientHelloVersion;
+        return tlsAttackerConfig.getHighestProtocolVersion();
     }
 
     public void setClientHelloVersion(ProtocolVersion clientHelloVersion) {
-        this.clientHelloVersion = clientHelloVersion;
+        tlsAttackerConfig.setHighestProtocolVersion(clientHelloVersion);
     }
 
+    @XmlElement(name = "serverHelloVersion")
     public ProtocolVersion getServerHelloVersion() {
-        return serverHelloVersion;
+        return tlsAttackerConfig.getDefaultSelectedProtocolVersion();
     }
 
     public void setServerHelloVersion(ProtocolVersion serverHelloVersion) {
-        this.serverHelloVersion = serverHelloVersion;
+        tlsAttackerConfig.setDefaultSelectedProtocolVersion(serverHelloVersion);
     }
 
+    @XmlElementWrapper(name = "clientHelloCipherSuites")
+    @XmlElement(name = "cipherSuite")
     public List<CipherSuite> getClientHelloCipherSuites() {
-        return clientHelloCipherSuites;
+        return tlsAttackerConfig.getDefaultClientSupportedCipherSuites();
     }
 
     public void setClientHelloCipherSuites(List<CipherSuite> clientHelloCipherSuites) {
-        this.clientHelloCipherSuites = clientHelloCipherSuites;
+        tlsAttackerConfig.setDefaultClientSupportedCipherSuites(clientHelloCipherSuites);
     }
 
+    @XmlElement(name = "serverHelloCipherSuite")
     public CipherSuite getServerHelloCipherSuite() {
-        return serverHelloCipherSuite;
+        return tlsAttackerConfig.getDefaultSelectedCipherSuite();
     }
 
     public void setServerHelloCipherSuite(CipherSuite serverHelloCipherSuite) {
-        this.serverHelloCipherSuite = serverHelloCipherSuite;
+        tlsAttackerConfig.setDefaultSelectedCipherSuite(serverHelloCipherSuite);
     }
 
+    @XmlElementWrapper(name = "clientHelloSignatureAndHashAlgorithms")
+    @XmlElement(name = "signatureAndHashAlgorithm")
     public List<SignatureAndHashAlgorithm> getClientHelloSignatureAndHashAlgorithms() {
-        return clientHelloSignatureAndHashAlgorithms;
+        return tlsAttackerConfig.getDefaultClientSupportedSignatureAndHashAlgorithms();
     }
 
     public void setClientHelloSignatureAndHashAlgorithms(List<SignatureAndHashAlgorithm> clientHelloSignatureAndHashAlgorithms) {
-        this.clientHelloSignatureAndHashAlgorithms = clientHelloSignatureAndHashAlgorithms;
+        tlsAttackerConfig.setDefaultClientSupportedSignatureAndHashAlgorithms(clientHelloSignatureAndHashAlgorithms);
     }
 
+    @XmlElement(name = "serverHelloSignatureAndHashAlgorithm")
     public SignatureAndHashAlgorithm getServerHelloSignatureAndHashAlgorithm() {
-        return serverHelloSignatureAndHashAlgorithm;
+        return tlsAttackerConfig.getDefaultSelectedSignatureAndHashAlgorithm();
     }
 
     public void setServerHelloSignatureAndHashAlgorithm(SignatureAndHashAlgorithm serverHelloSignatureAndHashAlgorithm) {
-        this.serverHelloSignatureAndHashAlgorithm = serverHelloSignatureAndHashAlgorithm;
+        tlsAttackerConfig.setDefaultSelectedSignatureAndHashAlgorithm(serverHelloSignatureAndHashAlgorithm);
     }
 
-    public List<NamedGroup> getClientHelloGroups() {
-        return clientHelloGroups;
-    }
-
-    public void setClientHelloGroups(List<NamedGroup> clientHelloGroups) {
-        this.clientHelloGroups = clientHelloGroups;
-    }
-
-    public NamedGroup getServerHelloGroup() {
-        return serverHelloGroup;
-    }
-
-    public void setServerHelloGroup(NamedGroup serverHelloGroup) {
-        this.serverHelloGroup = serverHelloGroup;
-    }
-
-    public List<ECPointFormat> getClientHelloPointFormats() {
-        return clientHelloPointFormats;
-    }
-
-    public void setClientHelloPointFormats(List<ECPointFormat> clientHelloPointFormats) {
-        this.clientHelloPointFormats = clientHelloPointFormats;
-    }
-
-    public ECPointFormat getServerHelloPointFormat() {
-        return serverHelloPointFormat;
-    }
-
-    public void setServerHelloPointFormat(ECPointFormat serverHelloPointFormat) {
-        this.serverHelloPointFormat = serverHelloPointFormat;
-    }
-
-    public boolean isAddECPointFormatExtension() {
-        return addECPointFormatExtension;
-    }
-
-    public void setAddECPointFormatExtension(boolean addECPointFormatExtension) {
-        this.addECPointFormatExtension = addECPointFormatExtension;
-    }
-
+    @XmlElement(name = "addEllipticCurveExtension")
     public boolean isAddEllipticCurveExtension() {
-        return addEllipticCurveExtension;
+        return tlsAttackerConfig.isAddEllipticCurveExtension();
     }
 
     public void setAddEllipticCurveExtension(boolean addEllipticCurveExtension) {
-        this.addEllipticCurveExtension = addEllipticCurveExtension;
+        tlsAttackerConfig.setAddEllipticCurveExtension(addEllipticCurveExtension);
     }
 
+    @XmlElementWrapper(name = "clientHelloGroups")
+    @XmlElement(name = "group")
+    public List<NamedGroup> getClientHelloGroups() {
+        return tlsAttackerConfig.getDefaultClientNamedGroups();
+    }
+
+    public void setClientHelloGroups(List<NamedGroup> clientHelloGroups) {
+        tlsAttackerConfig.setDefaultClientNamedGroups(clientHelloGroups);
+    }
+
+    @XmlElement(name = "serverHelloGroup")
+    public NamedGroup getServerHelloGroup() {
+        return tlsAttackerConfig.getDefaultSelectedNamedGroup();
+    }
+
+    public void setServerHelloGroup(NamedGroup serverHelloGroup) {
+        tlsAttackerConfig.setDefaultSelectedNamedGroup(serverHelloGroup);
+    }
+
+    @XmlElementWrapper(name = "clientHelloPointFormats")
+    @XmlElement(name = "pointFormat")
+    public List<ECPointFormat> getClientHelloPointFormats() {
+        return tlsAttackerConfig.getDefaultClientSupportedPointFormats();
+    }
+
+    public void setClientHelloPointFormats(List<ECPointFormat> clientHelloPointFormats) {
+        tlsAttackerConfig.setDefaultClientSupportedPointFormats(clientHelloPointFormats);
+    }
+
+    @XmlElement(name = "addECPointFormatExtension")
+    public boolean isAddECPointFormatExtension() {
+        return tlsAttackerConfig.isAddECPointFormatExtension();
+    }
+
+    public void setAddECPointFormatExtension(boolean addECPointFormatExtension) {
+        tlsAttackerConfig.setAddECPointFormatExtension(addECPointFormatExtension);
+    }
+
+    @XmlElement(name = "serverHelloPointFormat")
+    public ECPointFormat getServerHelloPointFormat() {
+        return tlsAttackerConfig.getDefaultSelectedPointFormat();
+    }
+
+    public void setServerHelloPointFormat(ECPointFormat serverHelloPointFormat) {
+        tlsAttackerConfig.setDefaultSelectedPointFormat(serverHelloPointFormat);
+    }
+
+    @XmlElement(name = "useIndividualDatagrams")
+    public boolean isUseIndividualDatagrams() {
+        return tlsAttackerConfig.isIndividualTransportPacketsForFragments();
+    }
+
+    public void setUseIndividualDatagrams(boolean useIndividualDatagrams) {
+        tlsAttackerConfig.setIndividualTransportPacketsForFragments(useIndividualDatagrams);
+    }
+
+    @XmlElement(name = "addRenegotiationInfoExtension")
     public boolean isAddRenegotiationInfoExtension() {
-        return addRenegotiationInfoExtension;
+        return tlsAttackerConfig.isAddRenegotiationInfoExtension();
     }
 
     public void setAddRenegotiationInfoExtension(boolean addRenegotiationInfoExtension) {
-        this.addRenegotiationInfoExtension = addRenegotiationInfoExtension;
+        tlsAttackerConfig.setAddRenegotiationInfoExtension(addRenegotiationInfoExtension);
     }
 
     public boolean isFragmentFirstCHMessage() {
@@ -267,14 +287,6 @@ public class OverlappingAnalysisConfig {
 
     public OverlappingFieldConfig getOverlappingFieldConfig() {
         return overlappingFieldConfig;
-    }
-
-    public boolean isIndividualTransportPacketsForFragments() {
-        return individualTransportPacketsForFragments;
-    }
-
-    public void setIndividualTransportPacketsForFragments(boolean individualTransportPacketsForFragments) {
-        this.individualTransportPacketsForFragments = individualTransportPacketsForFragments;
     }
 
     public String getDhPrivateKey() {
