@@ -1,6 +1,7 @@
 package de.upb.cs.util;
 
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
+import de.upb.cs.config.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,20 +13,19 @@ public class LogUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LogUtils.class);
 
-    public static void logOverlappingFragments(DtlsHandshakeMessageFragment originalFragment, List<DtlsHandshakeMessageFragment> fragments) {
+    public static void logOverlappingFragments(Message message, DtlsHandshakeMessageFragment originalFragment, List<DtlsHandshakeMessageFragment> fragments) {
         StringBuilder builder = new StringBuilder();
+        builder.append("\nMessage: ").append(message);
         builder.append("\n\tOriginal message:  ")
                 .append(byteToHexString(originalFragment.getFragmentContentConfig()));
 
         for (int i = 0; i < fragments.size(); i++) {
             builder.append("\n\tFragment ")
-                    .append(i)
+                    .append(i + 1)
                     .append(":        ")
                     .append("   ".repeat(fragments.get(i).getOffsetConfig()))
                     .append(byteToHexString(fragments.get(i).getFragmentContentConfig()));
         }
-        //builder.append("\n\tOverlapping bytes: ")
-        //        .append(byteToHexString(overlappingBytes));
 
         int length = 3 * originalFragment.getFragmentContentConfig().length + 30;
         builder.insert(0, "\n" + "-".repeat(length));

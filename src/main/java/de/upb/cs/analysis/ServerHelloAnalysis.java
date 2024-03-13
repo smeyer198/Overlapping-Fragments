@@ -18,7 +18,7 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicServerKeyExchangeA
 import de.upb.cs.action.AdvancedChangeCipherSuiteAction;
 import de.upb.cs.action.ReceiveDynamicClientKeyExchangeAction;
 import de.upb.cs.config.OverlappingAnalysisConfig;
-import de.upb.cs.message.OverlappingServerHelloHandler;
+import de.upb.cs.message.ServerHelloBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +27,12 @@ import java.util.List;
 public class ServerHelloAnalysis extends AbstractAnalysis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerHelloAnalysis.class);
-    private final OverlappingServerHelloHandler serverHelloHandler;
+    private final ServerHelloBuilder serverHelloBuilder;
 
     public ServerHelloAnalysis(OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
         super(analysisConfig, "server");
 
-        this.serverHelloHandler = new OverlappingServerHelloHandler(analysisConfig);
+        this.serverHelloBuilder = new ServerHelloBuilder(getAnalysisConfig(), getTlsContext());
     }
 
     @Override
@@ -87,7 +87,7 @@ public class ServerHelloAnalysis extends AbstractAnalysis {
         }
 
         try {
-            return serverHelloHandler.createFragmentsFromMessage(mergedFragment, getTlsContext());
+            return serverHelloBuilder.buildFragmentsForMessage(mergedFragment);
         } catch (OverlappingFragmentException e) {
             LOGGER.error("Encountered error while creating fragments: {}", e.getMessage());
             return originalFragments;
@@ -103,10 +103,10 @@ public class ServerHelloAnalysis extends AbstractAnalysis {
                 getDigestHandler()
         );
         resultsHandler.inspectWorkflowTrace();
-
-        /*if (getAnalysisConfig().isClientAuthentication()) {
-            resultsHandler.verifyCertificateVerifyMessage();
-        }*/
         resultsHandler.verifyClientFinishedMessage();
+
+        if (getTlsContext().isReceivedFatalAlert()) {
+            LOGGER.info("Received Fatal Alert");
+        }
     }
 }

@@ -78,11 +78,13 @@ public class ResultsHandler {
 
             if (finishedMessage != null) {
                 byte[] finishedVerifyData = finishedMessage.getVerifyData().getValue();
-                LOGGER.debug("VerifyData:\n" +
+                LOGGER.info("VerifyData:\n" +
                                 "\tFinished:    {}\n" +
                                 "\tOriginal:    {}\n" +
                                 "\tManipulated: {}\n",
-                        finishedVerifyData, verifyDataOriginalTrace, verifyDataManipulatedTrace);
+                        LogUtils.byteToHexString(finishedVerifyData),
+                        LogUtils.byteToHexString(verifyDataOriginalTrace),
+                        LogUtils.byteToHexString(verifyDataManipulatedTrace));
 
                 if (Arrays.equals(finishedVerifyData, verifyDataOriginalTrace)) {
                     LOGGER.info("Client interpreted original bytes");
@@ -95,7 +97,7 @@ public class ResultsHandler {
                 // In this case, the handshake failed because either the client aborted the handshake
                 // or TLS-Attacker was not able to deal with the Finished message (e.g. it used the wrong
                 // encryption algorithm)
-                LOGGER.info("Did not receive ClientFinished message. Client most likely interpreted manipulated bytes");
+                LOGGER.info("Did not receive ClientFinished message or unable to decrypt ClientFinished message");
             }
         } catch (CryptoException e) {
             LOGGER.error("Error while computing the verify data bytes");
@@ -126,13 +128,13 @@ public class ResultsHandler {
                     if (!analysisConfig.isOverlappingBytesInDigest()) {
                         LOGGER.info("ClientFinished contained original bytes, Server interpreted original bytes");
                     } else {
-                        LOGGER.info("WARNING 1");
+                        LOGGER.info("MISMATCH 1");
                     }
                 } else if (Arrays.equals(finishedVerifyData, verifyDataManipulatedTrace)) {
                     if (analysisConfig.isOverlappingBytesInDigest()) {
                         LOGGER.info("ClientFinished contained manipulated bytes, Server interpreted manipulated bytes");
                     } else {
-                        LOGGER.info("WARNING 2");
+                        LOGGER.info("MISMATCH 2");
                     }
                 }
             } else {

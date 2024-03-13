@@ -23,7 +23,6 @@ public class Evaluation {
         OverlappingAnalysisConfig analysisConfig;
         analysisConfig = CHCipherSuiteTestVectors.subsequentTypeAOriginalOrderSingleOverlappingByte();
 
-        analysisConfig.setFragmentFirstCHMessage(false);
         analysisConfig.setCookieExchange(true);
 
         analysisConfig.setUseIndividualDatagrams(true);

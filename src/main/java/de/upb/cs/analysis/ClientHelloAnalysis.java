@@ -17,24 +17,23 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicClientKeyExchangeAction;
 import de.upb.cs.action.AdvancedChangeCipherSuiteAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
+import de.upb.cs.config.Message;
 import de.upb.cs.config.OverlappingAnalysisConfig;
-import de.upb.cs.message.OverlappingClientHelloHandler;
-import de.upb.cs.util.LogUtils;
+import de.upb.cs.message.ClientHelloBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHelloAnalysis extends AbstractAnalysis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientHelloAnalysis.class);
-    private final OverlappingClientHelloHandler clientHelloHandler;
+    private final ClientHelloBuilder clientHelloBuilder;
 
     public ClientHelloAnalysis(OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
         super(analysisConfig, "client");
 
-        this.clientHelloHandler = new OverlappingClientHelloHandler(getAnalysisConfig());
+        this.clientHelloBuilder = new ClientHelloBuilder(getAnalysisConfig(), getTlsContext());
     }
 
     @Override
@@ -88,23 +87,20 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
             return originalFragments;
         }
 
-        /* Relevant for PionDTLS
-        if (getTlsContext().getDtlsCookie().length == 0) {
-            updateMessageContent(mergedFragment);
-            return new ArrayList<>(List.of(mergedFragment));
-        }*/
-
-        // Check, whether the first CH message should be fragmented
-        if (skipFragmentingFirstMessage()) {
-            return originalFragments;
-        }
-
         try {
-            return clientHelloHandler.createFragmentsFromMessage(mergedFragment, getTlsContext());
+            // Fragment the initial ClientHello message
+            if (getAnalysisConfig().getMessage() == Message.INITIAL_CLIENT_HELLO && isInitialClientHello()) {
+                return clientHelloBuilder.buildFragmentsForMessage(mergedFragment);
+            }
+
+            // Fragment the second ClientHello message
+            if (getAnalysisConfig().getMessage() == Message.CLIENT_HELLO && !isInitialClientHello()) {
+                return clientHelloBuilder.buildFragmentsForMessage(mergedFragment);
+            }
         } catch (OverlappingFragmentException e) {
             LOGGER.error("Encountered error while creating fragments: {}", e.getMessage());
-            return originalFragments;
         }
+        return originalFragments;
     }
 
     @Override
@@ -119,18 +115,20 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
         resultsHandler.inspectHandshakeParameters();
 
         resultsHandler.verifyServerFinishedMessage();
+
+        if (getTlsContext().isReceivedFatalAlert()) {
+            LOGGER.info("Received Fatal Alert");
+        }
     }
 
-    private boolean skipFragmentingFirstMessage() {
+    private boolean isInitialClientHello() {
         byte[] cookie = getTlsContext().getDtlsCookie();
-        return cookie.length == 0 && !getAnalysisConfig().isFragmentFirstCHMessage();
+
+        if (cookie == null) {
+            return true;
+        }
+
+        return cookie.length == 0;
     }
 
-    public void updateMessageContent(DtlsHandshakeMessageFragment fragment) {
-        byte[] fragmentContent = fragment.getFragmentContentConfig();
-        fragmentContent[39] = (byte) 0x2b;
-        fragment.setFragmentContentConfig(fragmentContent);
-        LOGGER.info(LogUtils.byteToHexString(fragmentContent));
-        LOGGER.info(LogUtils.byteToHexString(fragment.getFragmentContentConfig()));
-    }
 }

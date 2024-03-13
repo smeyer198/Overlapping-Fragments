@@ -8,8 +8,8 @@ import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.state.State;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
+import de.upb.cs.config.Message;
 import de.upb.cs.config.OverlappingAnalysisConfig;
-import de.upb.cs.config.OverlappingField;
 import de.upb.cs.message.DigestHandler;
 import de.upb.cs.util.LogUtils;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ public abstract  class AbstractAnalysis {
                     return originalFragments;
                 }
 
-                if (analysisConfig.getOverlappingField() == OverlappingField.NO_FIELD) {
+                if (analysisConfig.getMessage() == Message.NONE) {
                     return originalFragments;
                 }
 
@@ -70,17 +70,15 @@ public abstract  class AbstractAnalysis {
 
                 digestHandler.updateManipulatedMessageBytes(originalFragment.getFragmentContentConfig(), overlappingFragments);
                 if (isOverlappingBytesInDigest()) {
-                    LOGGER.debug("Updating digest for message of type {}", type);
+                    LOGGER.debug("Updating digest for message of type {}", analysisConfig.getMessage());
                     DigestHandler.updateLastDigestBytesInContext(getTlsContext(), getDigestHandler().getManipulatedMessageBytes());
                 }
 
-                LogUtils.logOverlappingFragments(originalFragment, overlappingFragments);
+                LogUtils.logOverlappingFragments(analysisConfig.getMessage(), originalFragment, overlappingFragments);
 
                 return overlappingFragments;
             }
         });
-
-        LOGGER.info("Using FieldConfig\n{}", analysisConfig.getOverlappingFieldConfig());
     }
 
     public abstract void initializeWorkflowTrace();

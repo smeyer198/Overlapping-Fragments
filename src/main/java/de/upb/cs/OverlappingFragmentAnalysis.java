@@ -14,6 +14,7 @@ import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.analysis.ServerHelloAnalysis;
 import de.upb.cs.analysis.ServerKeyExchangeAnalysis;
 import de.upb.cs.config.ConnectionConfig;
+import de.upb.cs.config.Message;
 import de.upb.cs.config.OverlappingAnalysisConfig;
 import de.upb.cs.config.OverlappingField;
 import org.slf4j.Logger;
@@ -75,7 +76,7 @@ public class OverlappingFragmentAnalysis {
         analysisConfig.getTlsAttackerConfig().setStopReceivingAfterFatal(true);
     }
 
-    private AbstractAnalysis getAnalysis() throws OverlappingFragmentException {
+    private AbstractAnalysis getAnalysis2() throws OverlappingFragmentException {
         OverlappingField field = analysisConfig.getOverlappingField();
 
         switch (field) {
@@ -104,6 +105,32 @@ public class OverlappingFragmentAnalysis {
                 return new ServerKeyExchangeAnalysis(analysisConfig);
             default:
                 throw new OverlappingFragmentException("Cannot create analysis for field " + field);
+        }
+    }
+
+    private AbstractAnalysis getAnalysis() throws OverlappingFragmentException {
+        Message message = analysisConfig.getMessage();
+
+        switch (message) {
+            case NONE:
+            case INITIAL_CLIENT_HELLO:
+            case CLIENT_HELLO:
+                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_HELLO);
+                return new ClientHelloAnalysis(analysisConfig);
+            case RSA_CLIENT_KEY_EXCHANGE:
+            case DH_CLIENT_KEY_EXCHANGE:
+            case ECDH_CLIENT_KEY_EXCHANGE:
+                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_KEY_EXCHANGE);
+                return new ClientKeyExchangeAnalysis(analysisConfig);
+            case SERVER_HELLO:
+                analysisConfig.setMessageType(HandshakeMessageType.SERVER_HELLO);
+                return new ServerHelloAnalysis(analysisConfig);
+            case DH_SERVER_KEY_EXCHANGE:
+            case ECDH_SERVER_KEY_EXCHANGE:
+                analysisConfig.setMessageType(HandshakeMessageType.SERVER_KEY_EXCHANGE);
+                return new ServerKeyExchangeAnalysis(analysisConfig);
+            default:
+                throw new OverlappingFragmentException("Cannot create analysis for message " + message);
         }
     }
 }

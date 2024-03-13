@@ -14,6 +14,7 @@ import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @XmlRootElement(name = "AnalysisConfig")
@@ -21,6 +22,13 @@ import java.util.List;
 public class OverlappingAnalysisConfig {
 
     private final Config tlsAttackerConfig;
+
+    @XmlElementWrapper(name = "fragments")
+    @XmlElement(name = "fragment")
+    private List<FragmentConfig> fragments = new ArrayList<>();
+
+    @XmlElement(name = "message")
+    private Message message = Message.NONE;
 
     @XmlElement(name = "FieldConfig")
     private OverlappingFieldConfig overlappingFieldConfig;
@@ -33,9 +41,6 @@ public class OverlappingAnalysisConfig {
 
     @XmlElement(name = "useUpdatedKeys")
     private boolean useUpdatedKeys = false;
-
-    @XmlElement(name = "fragmentFirstCHMessage")
-    private boolean fragmentFirstCHMessage = false;
 
     @XmlElement(name = "clientAuthentication")
     private boolean clientAuthentication = false;
@@ -80,6 +85,7 @@ public class OverlappingAnalysisConfig {
         tlsAttackerConfig.setDefaultSelectedSignatureAndHashAlgorithm(SignatureAndHashAlgorithm.RSA_SHA256);
         tlsAttackerConfig.setDefaultSelectedNamedGroup(NamedGroup.SECP256R1);
         tlsAttackerConfig.setDefaultSelectedPointFormat(ECPointFormat.UNCOMPRESSED);
+        tlsAttackerConfig.setEnforceSettings(true);
     }
 
     public OverlappingAnalysisConfig(OverlappingFieldConfig overlappingFieldConfig) {
@@ -89,6 +95,14 @@ public class OverlappingAnalysisConfig {
 
     public Config getTlsAttackerConfig() {
         return tlsAttackerConfig;
+    }
+
+    public List<FragmentConfig> getFragments() {
+        return fragments;
+    }
+
+    public Message getMessage() {
+        return message;
     }
 
     public OverlappingField getOverlappingField() {
@@ -251,14 +265,6 @@ public class OverlappingAnalysisConfig {
 
     public void setAddRenegotiationInfoExtension(boolean addRenegotiationInfoExtension) {
         tlsAttackerConfig.setAddRenegotiationInfoExtension(addRenegotiationInfoExtension);
-    }
-
-    public boolean isFragmentFirstCHMessage() {
-        return fragmentFirstCHMessage;
-    }
-
-    public void setFragmentFirstCHMessage(boolean fragmentFirstCHMessage) {
-        this.fragmentFirstCHMessage = fragmentFirstCHMessage;
     }
 
     public boolean isClientAuthentication() {
