@@ -17,7 +17,7 @@ import de.rub.nds.tlsattacker.core.workflow.action.ReceiveAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicClientKeyExchangeAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.message.ClientKeyExchangeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyExchangeAnalysis.class);
     private final SendDynamicClientKeyExchangeAction dynamicClientKeyExchangeAction;
 
-    public ClientKeyExchangeAnalysis(OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
+    public ClientKeyExchangeAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
         super(analysisConfig, "client");
 
         this.dynamicClientKeyExchangeAction = new SendDynamicClientKeyExchangeAction(getAliasContext());

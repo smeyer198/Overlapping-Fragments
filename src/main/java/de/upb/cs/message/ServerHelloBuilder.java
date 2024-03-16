@@ -7,16 +7,16 @@ import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.OffsetConfig;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.OverrideConfig;
-import de.upb.cs.util.LogUtils;
+import de.upb.cs.analysis.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServerHelloBuilder extends MessageBuilder {
 
-    public ServerHelloBuilder(OverlappingAnalysisConfig analysisConfig, TlsContext context) {
+    public ServerHelloBuilder(AnalysisConfig analysisConfig, TlsContext context) {
         super(analysisConfig, context);
     }
 
@@ -40,7 +40,7 @@ public class ServerHelloBuilder extends MessageBuilder {
             DtlsHandshakeMessageFragment fragment;
             if (fragmentConfig.getOverrideConfig() != null) {
                 int index = parseOverrideIndex(fragmentConfig.getOverrideConfig());
-                byte[] byteValue = LogUtils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
+                byte[] byteValue = Utils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
 
                 DtlsHandshakeMessageFragment manipulatedFragment = fragmentBuilder.overwriteBytes(originalFragment, index, byteValue);
                 fragment = fragmentBuilder.buildFragment(manipulatedFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());

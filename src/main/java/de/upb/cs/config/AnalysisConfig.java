@@ -19,7 +19,7 @@ import java.util.List;
 
 @XmlRootElement(name = "AnalysisConfig")
 @XmlAccessorType(XmlAccessType.NONE)
-public class OverlappingAnalysisConfig {
+public class AnalysisConfig {
 
     private final Config tlsAttackerConfig;
 
@@ -29,9 +29,6 @@ public class OverlappingAnalysisConfig {
 
     @XmlElement(name = "message")
     private Message message = Message.NONE;
-
-    @XmlElement(name = "FieldConfig")
-    private OverlappingFieldConfig overlappingFieldConfig;
 
     @XmlElement(name = "dhPrivateKey")
     private String dhPrivateKey = "FFFF";
@@ -68,7 +65,7 @@ public class OverlappingAnalysisConfig {
     @XmlTransient
     private HandshakeMessageType messageType;
 
-    private OverlappingAnalysisConfig() {
+    private AnalysisConfig() {
         tlsAttackerConfig = new Config();
 
         tlsAttackerConfig.setHighestProtocolVersion(ProtocolVersion.DTLS12);
@@ -88,11 +85,6 @@ public class OverlappingAnalysisConfig {
         tlsAttackerConfig.setEnforceSettings(true);
     }
 
-    public OverlappingAnalysisConfig(OverlappingFieldConfig overlappingFieldConfig) {
-        this();
-        this.overlappingFieldConfig = overlappingFieldConfig;
-    }
-
     public Config getTlsAttackerConfig() {
         return tlsAttackerConfig;
     }
@@ -103,30 +95,6 @@ public class OverlappingAnalysisConfig {
 
     public Message getMessage() {
         return message;
-    }
-
-    public OverlappingField getOverlappingField() {
-        return getOverlappingFieldConfig().getOverlappingField();
-    }
-
-    public OverlappingType getOverlappingType() {
-        return getOverlappingFieldConfig().getOverlappingType();
-    }
-
-    public OverlappingOrder getOverlappingOrder() {
-        return getOverlappingFieldConfig().getOverlappingOrder();
-    }
-
-    public int getSplitIndex() {
-        return getOverlappingFieldConfig().getSplitIndex();
-    }
-
-    public String getOverlappingBytes() {
-        return overlappingFieldConfig.getOverlappingBytes();
-    }
-
-    public int getAdditionalFragmentIndex() {
-        return getOverlappingFieldConfig().getAdditionalFragmentIndex();
     }
 
     public HandshakeMessageType getMessageType() {
@@ -289,10 +257,6 @@ public class OverlappingAnalysisConfig {
 
     public void setCookieExchange(boolean cookieExchange) {
         this.cookieExchange = cookieExchange;
-    }
-
-    public OverlappingFieldConfig getOverlappingFieldConfig() {
-        return overlappingFieldConfig;
     }
 
     public String getDhPrivateKey() {

@@ -9,9 +9,8 @@ import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment
 import de.rub.nds.tlsattacker.core.state.State;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.upb.cs.config.Message;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.message.DigestHandler;
-import de.upb.cs.util.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +19,13 @@ import java.util.List;
 public abstract  class AbstractAnalysis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalysis.class);
-    private final OverlappingAnalysisConfig analysisConfig;
+    private final AnalysisConfig analysisConfig;
     private final String aliasContext;
     private final WorkflowTrace trace;
     private final State state;
     private final DigestHandler digestHandler;
 
-    public AbstractAnalysis(OverlappingAnalysisConfig analysisConfig,String aliasContext) throws OverlappingFragmentException {
+    public AbstractAnalysis(AnalysisConfig analysisConfig, String aliasContext) throws OverlappingFragmentException {
         this.analysisConfig = analysisConfig;
         this.aliasContext = aliasContext;
 
@@ -74,7 +73,7 @@ public abstract  class AbstractAnalysis {
                     DigestHandler.updateLastDigestBytesInContext(getTlsContext(), getDigestHandler().getManipulatedMessageBytes());
                 }
 
-                LogUtils.logOverlappingFragments(analysisConfig.getMessage(), originalFragment, overlappingFragments);
+                Utils.logOverlappingFragments(analysisConfig.getMessage(), originalFragment, overlappingFragments);
 
                 return overlappingFragments;
             }
@@ -100,7 +99,7 @@ public abstract  class AbstractAnalysis {
         );
     }
 
-    public OverlappingAnalysisConfig getAnalysisConfig() {
+    public AnalysisConfig getAnalysisConfig() {
         return analysisConfig;
     }
 

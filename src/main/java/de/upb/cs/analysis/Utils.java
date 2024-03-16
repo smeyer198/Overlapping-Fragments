@@ -1,4 +1,4 @@
-package de.upb.cs.util;
+package de.upb.cs.analysis;
 
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.upb.cs.config.Message;
@@ -9,9 +9,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
-public class LogUtils {
+public class Utils {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
     public static void logOverlappingFragments(Message message, DtlsHandshakeMessageFragment originalFragment, List<DtlsHandshakeMessageFragment> fragments) {
         StringBuilder builder = new StringBuilder();

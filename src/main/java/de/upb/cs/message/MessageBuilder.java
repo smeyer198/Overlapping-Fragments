@@ -7,7 +7,7 @@ import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.Constants;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
@@ -25,11 +25,11 @@ public abstract class MessageBuilder {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(MessageBuilder.class);
 
-    protected final OverlappingAnalysisConfig analysisConfig;
+    protected final AnalysisConfig analysisConfig;
     protected final TlsContext context;
     protected final FragmentBuilder fragmentBuilder;
 
-    public MessageBuilder(OverlappingAnalysisConfig analysisConfig, TlsContext context) {
+    public MessageBuilder(AnalysisConfig analysisConfig, TlsContext context) {
         this.analysisConfig = analysisConfig;
         this.context = context;
         this.fragmentBuilder = new FragmentBuilder();

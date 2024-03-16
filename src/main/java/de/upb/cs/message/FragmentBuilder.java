@@ -2,15 +2,15 @@ package de.upb.cs.message;
 
 import de.rub.nds.modifiablevariable.util.ArrayConverter;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
-import de.upb.cs.util.LogUtils;
+import de.upb.cs.analysis.Utils;
 
 import java.util.Arrays;
 
 public class FragmentBuilder {
 
     public DtlsHandshakeMessageFragment buildFragment(DtlsHandshakeMessageFragment originalFragment, int offset, int length, String prependBytes, String appendBytes) {
-        byte[] prepend = LogUtils.hexToByteArray(prependBytes);
-        byte[] append = LogUtils.hexToByteArray(appendBytes);
+        byte[] prepend = Utils.hexToByteArray(prependBytes);
+        byte[] append = Utils.hexToByteArray(appendBytes);
 
         return buildFragment(originalFragment, offset, length, prepend, append);
     }

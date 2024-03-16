@@ -14,9 +14,8 @@ import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTraceUtil;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.message.DigestHandler;
-import de.upb.cs.util.LogUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +24,12 @@ import java.util.Arrays;
 public class ResultsHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ResultsHandler.class);
-    private final OverlappingAnalysisConfig analysisConfig;
+    private final AnalysisConfig analysisConfig;
     private final TlsContext context;
     private final WorkflowTrace trace;
     private final DigestHandler digestHandler;
 
-    public ResultsHandler(OverlappingAnalysisConfig analysisConfig, TlsContext context, WorkflowTrace trace, DigestHandler digestHandler) {
+    public ResultsHandler(AnalysisConfig analysisConfig, TlsContext context, WorkflowTrace trace, DigestHandler digestHandler) {
         this.analysisConfig = analysisConfig;
         this.context = context;
         this.trace = trace;
@@ -82,9 +81,9 @@ public class ResultsHandler {
                                 "\tFinished:    {}\n" +
                                 "\tOriginal:    {}\n" +
                                 "\tManipulated: {}\n",
-                        LogUtils.byteToHexString(finishedVerifyData),
-                        LogUtils.byteToHexString(verifyDataOriginalTrace),
-                        LogUtils.byteToHexString(verifyDataManipulatedTrace));
+                        Utils.byteToHexString(finishedVerifyData),
+                        Utils.byteToHexString(verifyDataOriginalTrace),
+                        Utils.byteToHexString(verifyDataManipulatedTrace));
 
                 if (Arrays.equals(finishedVerifyData, verifyDataOriginalTrace)) {
                     LOGGER.info("Client interpreted original bytes");
@@ -120,9 +119,9 @@ public class ResultsHandler {
                                 "\tFinished:    {}\n" +
                                 "\tOriginal:    {}\n" +
                                 "\tManipulated: {}\n",
-                        LogUtils.byteToHexString(finishedVerifyData),
-                        LogUtils.byteToHexString(verifyDataOriginalTrace),
-                        LogUtils.byteToHexString(verifyDataManipulatedTrace));
+                        Utils.byteToHexString(finishedVerifyData),
+                        Utils.byteToHexString(verifyDataOriginalTrace),
+                        Utils.byteToHexString(verifyDataManipulatedTrace));
 
                 if (Arrays.equals(finishedVerifyData, verifyDataOriginalTrace)) {
                     if (!analysisConfig.isOverlappingBytesInDigest()) {

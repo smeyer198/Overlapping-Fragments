@@ -18,7 +18,7 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicClientKeyExchangeA
 import de.upb.cs.action.AdvancedChangeCipherSuiteAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
 import de.upb.cs.config.Message;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.message.ClientHelloBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientHelloAnalysis.class);
     private final ClientHelloBuilder clientHelloBuilder;
 
-    public ClientHelloAnalysis(OverlappingAnalysisConfig analysisConfig) throws OverlappingFragmentException {
+    public ClientHelloAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
         super(analysisConfig, "client");
 
         this.clientHelloBuilder = new ClientHelloBuilder(getAnalysisConfig(), getTlsContext());

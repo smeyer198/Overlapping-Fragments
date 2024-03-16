@@ -13,7 +13,7 @@ import de.rub.nds.tlsattacker.core.protocol.message.HelloVerifyRequestMessage;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
-import de.upb.cs.util.LogUtils;
+import de.upb.cs.analysis.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,16 +53,16 @@ public class DigestHandler {
 
                     if (messageBytes[dataIndex] != fragmentContent[i]) {
                         sb.append("\t")
-                                .append(LogUtils.byteToHexString(new byte[]{manipulatedMessageBytes[dataIndex]}))
+                                .append(Utils.byteToHexString(new byte[]{manipulatedMessageBytes[dataIndex]}))
                                 .append("-> ")
-                                .append(LogUtils.byteToHexString(new byte[]{fragmentContent[i]})).append(", ");
+                                .append(Utils.byteToHexString(new byte[]{fragmentContent[i]})).append(", ");
                         manipulatedMessageBytes[dataIndex] = fragmentContent[i];
                     }
                 }
                 //LOGGER.info(sb.toString());
             }
         }
-        LOGGER.info("Manipulated fragment:\n\t{}", LogUtils.byteToHexString(manipulatedMessageBytes));
+        LOGGER.info("Manipulated fragment:\n\t{}", Utils.byteToHexString(manipulatedMessageBytes));
     }
 
     public byte[] getManipulatedMessageBytes() {

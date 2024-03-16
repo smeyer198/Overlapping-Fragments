@@ -15,8 +15,7 @@ import de.upb.cs.analysis.ServerHelloAnalysis;
 import de.upb.cs.analysis.ServerKeyExchangeAnalysis;
 import de.upb.cs.config.ConnectionConfig;
 import de.upb.cs.config.Message;
-import de.upb.cs.config.OverlappingAnalysisConfig;
-import de.upb.cs.config.OverlappingField;
+import de.upb.cs.config.AnalysisConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,9 +23,9 @@ public class OverlappingFragmentAnalysis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingFragmentAnalysis.class);
     private final ConnectionConfig connectionConfig;
-    private final OverlappingAnalysisConfig analysisConfig;
+    private final AnalysisConfig analysisConfig;
 
-    public OverlappingFragmentAnalysis(ConnectionConfig connectionConfig, OverlappingAnalysisConfig analysisConfig) {
+    public OverlappingFragmentAnalysis(ConnectionConfig connectionConfig, AnalysisConfig analysisConfig) {
         this.connectionConfig = connectionConfig;
         this.analysisConfig = analysisConfig;
         initializeDtlsFields();
@@ -74,38 +73,6 @@ public class OverlappingFragmentAnalysis {
         analysisConfig.getTlsAttackerConfig().setStopActionsAfterFatal(true);
         // config.setStopTraceAfterUnexpected(true);
         analysisConfig.getTlsAttackerConfig().setStopReceivingAfterFatal(true);
-    }
-
-    private AbstractAnalysis getAnalysis2() throws OverlappingFragmentException {
-        OverlappingField field = analysisConfig.getOverlappingField();
-
-        switch (field) {
-            case NO_FIELD:
-            case CLIENT_HELLO:
-            case CLIENT_HELLO_VERSION:
-            case CLIENT_HELLO_CIPHER_SUITE:
-            case CLIENT_HELLO_EXTENSION:
-                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_HELLO);
-                return new ClientHelloAnalysis(analysisConfig);
-            case CLIENT_KEY_EXCHANGE:
-            case CLIENT_KEY_EXCHANGE_RSA:
-            case CLIENT_KEY_EXCHANGE_DH:
-            case CLIENT_KEY_EXCHANGE_ECDH:
-                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_KEY_EXCHANGE);
-                return new ClientKeyExchangeAnalysis(analysisConfig);
-            case SERVER_HELLO:
-            case SERVER_HELLO_VERSION:
-            case SERVER_HELLO_CIPHER_SUITE:
-                analysisConfig.setMessageType(HandshakeMessageType.SERVER_HELLO);
-                return new ServerHelloAnalysis(analysisConfig);
-            case SERVER_KEY_EXCHANGE:
-            case SERVER_KEY_EXCHANGE_DH:
-            case SERVER_KEY_EXCHANGE_ECDH:
-                analysisConfig.setMessageType(HandshakeMessageType.SERVER_KEY_EXCHANGE);
-                return new ServerKeyExchangeAnalysis(analysisConfig);
-            default:
-                throw new OverlappingFragmentException("Cannot create analysis for field " + field);
-        }
     }
 
     private AbstractAnalysis getAnalysis() throws OverlappingFragmentException {

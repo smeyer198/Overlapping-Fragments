@@ -3,7 +3,7 @@ package de.upb.cs;
 import com.beust.jcommander.JCommander;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.ConnectionConfig;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 
@@ -18,9 +18,9 @@ public class Main {
 
         ConnectionConfig connectionConfig = Main.createConnectionConfig(settings);
 
-        JAXBContext context = JAXBContext.newInstance(OverlappingAnalysisConfig.class);
+        JAXBContext context = JAXBContext.newInstance(AnalysisConfig.class);
         FileReader reader = new FileReader(settings.getAnalysisConfigPath());
-        OverlappingAnalysisConfig analysisConfig = (OverlappingAnalysisConfig) context.createUnmarshaller().unmarshal(reader);
+        AnalysisConfig analysisConfig = (AnalysisConfig) context.createUnmarshaller().unmarshal(reader);
 
         OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, analysisConfig);
         analysis.executeAnalysis();

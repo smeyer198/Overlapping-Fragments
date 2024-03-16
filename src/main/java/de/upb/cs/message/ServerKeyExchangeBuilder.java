@@ -15,9 +15,9 @@ import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.Message;
 import de.upb.cs.config.OffsetConfig;
-import de.upb.cs.config.OverlappingAnalysisConfig;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.OverrideConfig;
-import de.upb.cs.util.LogUtils;
+import de.upb.cs.analysis.Utils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
 
     private final ServerKeyExchangeMessage<?> serverKeyExchangeMessage;
 
-    public ServerKeyExchangeBuilder(OverlappingAnalysisConfig analysisConfig, TlsContext context, ServerKeyExchangeMessage<?> serverKeyExchangeMessage) {
+    public ServerKeyExchangeBuilder(AnalysisConfig analysisConfig, TlsContext context, ServerKeyExchangeMessage<?> serverKeyExchangeMessage) {
         super(analysisConfig, context);
 
         this.serverKeyExchangeMessage = serverKeyExchangeMessage;
@@ -125,7 +125,7 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
                 return fragmentBuilder.buildFragment(manipulatedFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
             } else {
                 int index = parseOverrideIndex(fragmentConfig.getOverrideConfig());
-                byte[] byteValue = LogUtils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
+                byte[] byteValue = Utils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
 
                 DtlsHandshakeMessageFragment manipulatedFragment = fragmentBuilder.overwriteBytes(originalFragment, index, byteValue);
                 return fragmentBuilder.buildFragment(manipulatedFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
