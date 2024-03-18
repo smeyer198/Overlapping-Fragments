@@ -26,7 +26,7 @@ public class Main {
         analysis.executeAnalysis();
     }
 
-    private static ConnectionConfig createConnectionConfig(AnalysisSettings settings) {
+    public static ConnectionConfig createConnectionConfig(AnalysisSettings settings) {
         ConnectionConfig connectionConfig = new ConnectionConfig();
 
         connectionConfig.setClientHostname(settings.getClientHostname());

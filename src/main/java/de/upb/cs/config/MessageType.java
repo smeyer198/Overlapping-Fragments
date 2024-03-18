@@ -1,6 +1,6 @@
 package de.upb.cs.config;
 
-public enum Message {
+public enum MessageType {
     NONE,
     INITIAL_CLIENT_HELLO,
     CLIENT_HELLO,

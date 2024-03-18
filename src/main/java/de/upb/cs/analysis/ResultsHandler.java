@@ -15,7 +15,6 @@ import de.rub.nds.tlsattacker.core.workflow.WorkflowTraceUtil;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
 import de.upb.cs.config.AnalysisConfig;
-import de.upb.cs.message.DigestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +66,8 @@ public class ResultsHandler {
     }
 
     public void verifyClientFinishedMessage() {
-        MessageDigestCollector originalTraceDigest = digestHandler.parseWorkflowTraceForClientFinished(trace, context, analysisConfig.getMessageType(), false);
-        MessageDigestCollector manipulatedTraceDigest = digestHandler.parseWorkflowTraceForClientFinished(trace, context, analysisConfig.getMessageType(), true);
+        MessageDigestCollector originalTraceDigest = digestHandler.parseWorkflowTraceForClientFinished(trace, context, analysisConfig.getHandshakeMessageType(), false);
+        MessageDigestCollector manipulatedTraceDigest = digestHandler.parseWorkflowTraceForClientFinished(trace, context, analysisConfig.getHandshakeMessageType(), true);
 
         try {
             FinishedMessage finishedMessage = trace.getLastReceivedMessage(FinishedMessage.class);
@@ -81,9 +80,9 @@ public class ResultsHandler {
                                 "\tFinished:    {}\n" +
                                 "\tOriginal:    {}\n" +
                                 "\tManipulated: {}\n",
-                        Utils.byteToHexString(finishedVerifyData),
-                        Utils.byteToHexString(verifyDataOriginalTrace),
-                        Utils.byteToHexString(verifyDataManipulatedTrace));
+                        Utils.bytesToHexString(finishedVerifyData),
+                        Utils.bytesToHexString(verifyDataOriginalTrace),
+                        Utils.bytesToHexString(verifyDataManipulatedTrace));
 
                 if (Arrays.equals(finishedVerifyData, verifyDataOriginalTrace)) {
                     LOGGER.info("Client interpreted original bytes");
@@ -106,8 +105,8 @@ public class ResultsHandler {
     public void verifyServerFinishedMessage() {
         FinishedMessage finishedMessage = trace.getLastReceivedMessage(FinishedMessage.class);
 
-        MessageDigestCollector originalTraceDigest = digestHandler.parseWorkflowTraceForServerFinished(trace, context, analysisConfig.getMessageType(), false);
-        MessageDigestCollector manipulatedTraceDigest = digestHandler.parseWorkflowTraceForServerFinished(trace, context, analysisConfig.getMessageType(), true);
+        MessageDigestCollector originalTraceDigest = digestHandler.parseWorkflowTraceForServerFinished(trace, context, analysisConfig.getHandshakeMessageType(), false);
+        MessageDigestCollector manipulatedTraceDigest = digestHandler.parseWorkflowTraceForServerFinished(trace, context, analysisConfig.getHandshakeMessageType(), true);
 
         try {
             byte[] verifyDataOriginalTrace = computeVerifyData(originalTraceDigest, PseudoRandomFunction.SERVER_FINISHED_LABEL);
@@ -119,9 +118,9 @@ public class ResultsHandler {
                                 "\tFinished:    {}\n" +
                                 "\tOriginal:    {}\n" +
                                 "\tManipulated: {}\n",
-                        Utils.byteToHexString(finishedVerifyData),
-                        Utils.byteToHexString(verifyDataOriginalTrace),
-                        Utils.byteToHexString(verifyDataManipulatedTrace));
+                        Utils.bytesToHexString(finishedVerifyData),
+                        Utils.bytesToHexString(verifyDataOriginalTrace),
+                        Utils.bytesToHexString(verifyDataManipulatedTrace));
 
                 if (Arrays.equals(finishedVerifyData, verifyDataOriginalTrace)) {
                     if (!analysisConfig.isOverlappingBytesInDigest()) {

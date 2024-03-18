@@ -1,24 +1,33 @@
 package de.upb.cs.analysis;
 
+import de.rub.nds.tlsattacker.core.certificate.CertificateKeyPair;
+import de.rub.nds.tlsattacker.core.certificate.PemUtil;
 import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.connection.AliasedConnection;
-import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
-import de.rub.nds.tlsattacker.core.dtls.FragmentInterceptor;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
-import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.state.State;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
-import de.upb.cs.config.Message;
+import de.upb.cs.action.SendFragmentsAction;
+import de.upb.cs.action.UpdateDigestAction;
 import de.upb.cs.config.AnalysisConfig;
-import de.upb.cs.message.DigestHandler;
+import de.upb.cs.config.Constants;
+import de.upb.cs.message.MessageBuilder;
+import org.bouncycastle.crypto.tls.Certificate;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.cert.CertificateException;
 import java.util.List;
 
-public abstract  class AbstractAnalysis {
+public abstract class AbstractAnalysis {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalysis.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalysis.class);
     private final AnalysisConfig analysisConfig;
     private final String aliasContext;
     private final WorkflowTrace trace;
@@ -35,69 +44,51 @@ public abstract  class AbstractAnalysis {
         } else if (aliasContext.equals("server")) {
             connection = analysisConfig.getTlsAttackerConfig().getDefaultServerConnection();
         } else {
-            throw new OverlappingFragmentException("Alias context should be either 'client' or 'server'");
+            throw new OverlappingFragmentException("Alias context must be either '" + Constants.CLIENT_CONTEXT  + "' or '" + Constants.SERVER_CONTEXT + "'");
         }
 
         this.trace = new WorkflowTrace(List.of(connection));
         this.state = new State(analysisConfig.getTlsAttackerConfig(), trace);
         this.digestHandler = new DigestHandler();
 
-        this.state.getTlsContext().setFragmentInterceptor(new FragmentInterceptor() {
-            @Override
-            public List<DtlsHandshakeMessageFragment> interceptFragments(HandshakeMessageType type, byte[] handshakeBytes, List<DtlsHandshakeMessageFragment> originalFragments) {
-                if (originalFragments.isEmpty()) {
-                    return originalFragments;
-                }
+        Config config = analysisConfig.getTlsAttackerConfig();
 
-                if (analysisConfig.getMessage() == Message.NONE) {
-                    return originalFragments;
-                }
+        CertificateKeyPair keyPair = loadCertificate();
+        if (keyPair != null) {
+            config.setDefaultExplicitCertificateKeyPair(keyPair);
+            config.setAutoSelectCertificate(false);
+        }
+    }
 
-                DtlsHandshakeMessageFragment originalFragment;
-                if (originalFragments.size() != 1) {
-                    originalFragment = getSingleFragment(originalFragments, handshakeBytes);
-                } else {
-                    originalFragment = originalFragments.get(0);
-                }
+    private CertificateKeyPair loadCertificate() {
+        if (analysisConfig.getCertificatePath().isEmpty() && analysisConfig.getCertificateKeyPath().isEmpty()) {
+            LOGGER.debug("Using certificate from TLS-Attacker");
+            return null;
+        }
 
-                List<DtlsHandshakeMessageFragment> overlappingFragments = fragmentMessage(type, originalFragment, originalFragments);
+        try {
+            Security.addProvider(new BouncyCastleProvider());
 
-                // No overlapping fragments were created
-                if (originalFragments.equals(overlappingFragments)) {
-                    return originalFragments;
-                }
+            Certificate certificate = PemUtil.readCertificate(new File(analysisConfig.getCertificatePath()));
+            PrivateKey key = PemUtil.readPrivateKey(new File(analysisConfig.getCertificateKeyPath()));
 
-                digestHandler.updateManipulatedMessageBytes(originalFragment.getFragmentContentConfig(), overlappingFragments);
-                if (isOverlappingBytesInDigest()) {
-                    LOGGER.debug("Updating digest for message of type {}", analysisConfig.getMessage());
-                    DigestHandler.updateLastDigestBytesInContext(getTlsContext(), getDigestHandler().getManipulatedMessageBytes());
-                }
+            return new CertificateKeyPair(certificate, key);
+        } catch (CertificateException | IOException | NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-                Utils.logOverlappingFragments(analysisConfig.getMessage(), originalFragment, overlappingFragments);
+    public void addSendFragmentsActionToTrace(MessageBuilder messageBuilder) {
+        SendFragmentsAction sendFragmentsAction = new SendFragmentsAction(aliasContext, messageBuilder);
+        trace.addTlsAction(sendFragmentsAction);
 
-                return overlappingFragments;
-            }
-        });
+        UpdateDigestAction updateDigestAction = new UpdateDigestAction(aliasContext, digestHandler, messageBuilder, sendFragmentsAction.getFragments(), analysisConfig.isOverlappingBytesInDigest());
+        trace.addTlsAction(updateDigestAction);
     }
 
     public abstract void initializeWorkflowTrace();
 
-    protected abstract List<DtlsHandshakeMessageFragment> fragmentMessage(final HandshakeMessageType handshakeMessageType, DtlsHandshakeMessageFragment mergedFragment, List<DtlsHandshakeMessageFragment> originalFragments);
-
     public abstract void analyzeResults();
-
-    private DtlsHandshakeMessageFragment getSingleFragment(List<DtlsHandshakeMessageFragment> fragments, byte[] handshakeBytes) {
-        // All fragments belong to the same message
-        DtlsHandshakeMessageFragment fragment = fragments.get(0);
-
-        return new DtlsHandshakeMessageFragment(
-                fragment.getHandshakeMessageTypeConfig(),
-                handshakeBytes,
-                fragment.getMessageSequenceConfig(),
-                0,
-                fragment.getHandshakeMessageLengthConfig()
-        );
-    }
 
     public AnalysisConfig getAnalysisConfig() {
         return analysisConfig;
@@ -129,10 +120,6 @@ public abstract  class AbstractAnalysis {
 
     public boolean isClientAuthentication() {
         return analysisConfig.isClientAuthentication();
-    }
-
-    public boolean isOverlappingBytesInDigest() {
-        return analysisConfig.isOverlappingBytesInDigest();
     }
 
     public boolean isCookieExchange() {

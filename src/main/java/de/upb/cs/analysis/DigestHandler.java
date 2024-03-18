@@ -1,11 +1,9 @@
-package de.upb.cs.message;
+package de.upb.cs.analysis;
 
-import de.rub.nds.modifiablevariable.util.ArrayConverter;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.crypto.MessageDigestCollector;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
@@ -13,7 +11,7 @@ import de.rub.nds.tlsattacker.core.protocol.message.HelloVerifyRequestMessage;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
 import de.rub.nds.tlsattacker.core.workflow.action.TlsAction;
-import de.upb.cs.analysis.Utils;
+import de.upb.cs.action.SendFragmentsAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,18 +21,16 @@ import java.util.List;
 public class DigestHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DigestHandler.class);
+    private byte[] originalMessageBytes;
     private byte[] manipulatedMessageBytes;
 
     public DigestHandler() {
+        originalMessageBytes = new byte[]{};
         manipulatedMessageBytes = new byte[]{};
     }
 
-    public static void updateLastDigestBytesInContext(TlsContext context, byte[] updatedBytes) {
-        byte[] oldDigest = context.getDigest().getRawBytes();
-        byte[] digestWithoutLastBytes = Arrays.copyOfRange(oldDigest, 0, oldDigest.length - updatedBytes.length);
-        byte[] newDigest = ArrayConverter.concatenate(digestWithoutLastBytes, updatedBytes);
-        context.getDigest().reset();
-        context.getDigest().setRawBytes(newDigest);
+    public void updateOriginalMessageBytes(byte[] messageBytes) {
+        originalMessageBytes = Arrays.copyOf(messageBytes, messageBytes.length);
     }
 
     public void updateManipulatedMessageBytes(byte[] messageBytes, List<DtlsHandshakeMessageFragment> fragments) {
@@ -53,79 +49,20 @@ public class DigestHandler {
 
                     if (messageBytes[dataIndex] != fragmentContent[i]) {
                         sb.append("\t")
-                                .append(Utils.byteToHexString(new byte[]{manipulatedMessageBytes[dataIndex]}))
+                                .append(Utils.bytesToHexString(new byte[]{manipulatedMessageBytes[dataIndex]}))
                                 .append("-> ")
-                                .append(Utils.byteToHexString(new byte[]{fragmentContent[i]})).append(", ");
+                                .append(Utils.bytesToHexString(new byte[]{fragmentContent[i]})).append(", ");
                         manipulatedMessageBytes[dataIndex] = fragmentContent[i];
                     }
                 }
                 //LOGGER.info(sb.toString());
             }
         }
-        LOGGER.info("Manipulated fragment:\n\t{}", Utils.byteToHexString(manipulatedMessageBytes));
+        LOGGER.info("Manipulated fragment:\n\t{}", Utils.bytesToHexString(manipulatedMessageBytes));
     }
 
     public byte[] getManipulatedMessageBytes() {
         return manipulatedMessageBytes;
-    }
-
-    public MessageDigestCollector parseWorkflowTraceForCertificateVerify(WorkflowTrace trace, TlsContext context, HandshakeMessageType messageType, boolean useManipulatedMessageBytes) {
-        int writeHandshakeMessageSequence = 0;
-        int readHandshakeMessageSequence = 0;
-        MessageDigestCollector digestCollector = new MessageDigestCollector();
-
-        for (TlsAction action : trace.getTlsActions()) {
-            if (!action.isExecuted()) {
-                continue;
-            }
-
-            if (!(action instanceof MessageAction)) {
-                continue;
-            }
-            MessageAction messageAction = (MessageAction) action;
-
-            for (ProtocolMessage<?> message : messageAction.getMessages()) {
-                // Skip ChangeCipherSpec
-                if (!message.isHandshakeMessage()) {
-                    continue;
-                }
-
-                HandshakeMessage<?> handshakeMessage = (HandshakeMessage<?>) message;
-
-                // CertificateVerify is not part of the hash computation
-                if (message instanceof CertificateVerifyMessage) {
-                    return digestCollector;
-                }
-
-                byte[] messageContent;
-                if (handshakeMessage.getHandshakeMessageType() == messageType && useManipulatedMessageBytes) {
-                    messageContent = manipulatedMessageBytes;
-                } else {
-                    messageContent = handshakeMessage.getSerializer(context).serializeHandshakeMessageContent();
-                }
-
-                byte[] completeMessage;
-                if (messageAction.isSendingAction()) {
-                    completeMessage = wrapInSingleFragment(handshakeMessage.getHandshakeMessageType(), messageContent, readHandshakeMessageSequence, context);
-                    readHandshakeMessageSequence++;
-                } else if (messageAction.isReceivingAction()) {
-                    completeMessage = wrapInSingleFragment(handshakeMessage.getHandshakeMessageType(), messageContent, writeHandshakeMessageSequence, context);
-                    writeHandshakeMessageSequence++;
-                } else {
-                    LOGGER.error("Action {} is not a SendingAction or ReceivingAction", action.toCompactString());
-                    continue;
-                }
-
-                digestCollector.append(completeMessage);
-
-                if (handshakeMessage instanceof HelloVerifyRequestMessage) {
-                    digestCollector.reset();
-                }
-            }
-
-        }
-
-        return digestCollector;
     }
 
     public MessageDigestCollector parseWorkflowTraceForClientFinished(WorkflowTrace trace, TlsContext context, HandshakeMessageType messageType, boolean useManipulatedMessageBytes) {
@@ -143,6 +80,30 @@ public class DigestHandler {
             }
             MessageAction messageAction = (MessageAction) action;
 
+            if (messageAction instanceof SendFragmentsAction) {
+                byte[] messageContent;
+                if (useManipulatedMessageBytes) {
+                    messageContent = manipulatedMessageBytes;
+                } else {
+                    messageContent = originalMessageBytes;
+                }
+
+                byte[] completeMessage;
+                if (messageAction.isSendingAction()) {
+                    completeMessage = wrapInSingleFragment(messageType, messageContent, writeHandshakeMessageSequence, context);
+                    writeHandshakeMessageSequence++;
+                } else if (messageAction.isReceivingAction()) {
+                    completeMessage = wrapInSingleFragment(messageType, messageContent, readHandshakeMessageSequence, context);
+                    readHandshakeMessageSequence++;
+                } else {
+                    LOGGER.error("Action {} is not a SendingAction or ReceivingAction", action.toCompactString());
+                    continue;
+                }
+
+                digestCollector.append(completeMessage);
+                continue;
+            }
+
             for (ProtocolMessage<?> message : messageAction.getMessages()) {
                 // Skip ChangeCipherSpec
                 if (!message.isHandshakeMessage()) {
@@ -157,11 +118,11 @@ public class DigestHandler {
                 }
 
                 byte[] messageContent;
-                if (handshakeMessage.getHandshakeMessageType() == messageType && useManipulatedMessageBytes) {
+                /*if (handshakeMessage.getHandshakeMessageType() == messageType && useManipulatedMessageBytes) {
                     messageContent = manipulatedMessageBytes;
-                } else {
+                } else {*/
                     messageContent = handshakeMessage.getSerializer(context).serializeHandshakeMessageContent();
-                }
+                //}
 
                 byte[] completeMessage;
                 if (messageAction.isSendingAction()) {
@@ -201,6 +162,30 @@ public class DigestHandler {
             }
             MessageAction messageAction = (MessageAction) action;
 
+            if (messageAction instanceof SendFragmentsAction) {
+                byte[] messageContent;
+                if (useManipulatedMessageBytes) {
+                    messageContent = manipulatedMessageBytes;
+                } else {
+                    messageContent = originalMessageBytes;
+                }
+
+                byte[] completeMessage;
+                //if (messageAction.isSendingAction()) {
+                    completeMessage = wrapInSingleFragment(messageType, messageContent, writeHandshakeMessageSequence, context);
+                    writeHandshakeMessageSequence++;
+                /*} else if (messageAction.isReceivingAction()) {
+                    completeMessage = wrapInSingleFragment(messageType, messageContent, readHandshakeMessageSequence, context);
+                    readHandshakeMessageSequence++;
+                } else {
+                    LOGGER.error("Action {} is not a SendingAction or ReceivingAction", action.toCompactString());
+                    continue;
+                }*/
+
+                digestCollector.append(completeMessage);
+                continue;
+            }
+
             for (ProtocolMessage<?> message : messageAction.getMessages()) {
                 // Skip ChangeCipherSpec
                 if (!message.isHandshakeMessage()) {
@@ -215,11 +200,11 @@ public class DigestHandler {
                 }
 
                 byte[] messageContent;
-                if (handshakeMessage.getHandshakeMessageType() == messageType && useManipulatedMessageBytes) {
+                /*if (handshakeMessage.getHandshakeMessageType() == messageType && useManipulatedMessageBytes) {
                     messageContent = manipulatedMessageBytes;
-                } else {
+                } else {*/
                     messageContent = handshakeMessage.getSerializer(context).serializeHandshakeMessageContent();
-                }
+                //}
 
                 byte[] completeMessage;
                 if (messageAction.isSendingAction()) {

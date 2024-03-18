@@ -23,7 +23,7 @@ public class AnalysisSettings {
     private int serverTimeout = 10000;
 
     @Parameter(names = {"-analysisConfig"}, description = "Path to the analysis config")
-    private String analysisConfigPath = "./";
+    private String analysisConfigPath = "";
 
 
     public String getClientHostname() {

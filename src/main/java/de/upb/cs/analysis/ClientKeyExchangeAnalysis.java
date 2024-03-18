@@ -1,38 +1,30 @@
 package de.upb.cs.analysis;
 
-import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
-import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ChangeCipherSpecMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.ClientKeyExchangeMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HelloVerifyRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloDoneMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloMessage;
 import de.rub.nds.tlsattacker.core.workflow.action.ReceiveAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendAction;
-import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicClientKeyExchangeAction;
+import de.upb.cs.action.ComputeDynamicClientKeyExchangeAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
 import de.upb.cs.config.AnalysisConfig;
+import de.upb.cs.config.Constants;
 import de.upb.cs.message.ClientKeyExchangeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyExchangeAnalysis.class);
-    private final SendDynamicClientKeyExchangeAction dynamicClientKeyExchangeAction;
+    private final ClientKeyExchangeBuilder clientKeyExchangeBuilder;
 
     public ClientKeyExchangeAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
-        super(analysisConfig, "client");
+        super(analysisConfig, Constants.CLIENT_CONTEXT);
 
-        this.dynamicClientKeyExchangeAction = new SendDynamicClientKeyExchangeAction(getAliasContext());
+        this.clientKeyExchangeBuilder = new ClientKeyExchangeBuilder(getAnalysisConfig(), getTlsContext());
     }
 
     @Override
@@ -57,7 +49,9 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
             getTrace().addTlsAction(new SendAction(getAliasContext(), new CertificateMessage()));
         }
 
-        getTrace().addTlsAction(dynamicClientKeyExchangeAction);
+        getTrace().addTlsAction(new ComputeDynamicClientKeyExchangeAction(getAliasContext(), clientKeyExchangeBuilder));
+        // getTrace().addTlsAction(new SendFragmentsAction(getAliasContext(), clientKeyExchangeBuilder));
+        addSendFragmentsActionToTrace(clientKeyExchangeBuilder);
 
         if (isClientAuthentication()) {
             getTrace().addTlsAction(new SendAction(getAliasContext(), new CertificateVerifyMessage()));
@@ -67,28 +61,6 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
         getTrace().addTlsAction(new SendAction(getAliasContext(), new FinishedMessage()));
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new ChangeCipherSpecMessage()));
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new FinishedMessage()));
-    }
-
-    @Override
-    protected List<DtlsHandshakeMessageFragment> fragmentMessage(HandshakeMessageType handshakeMessageType, DtlsHandshakeMessageFragment mergedFragment, List<DtlsHandshakeMessageFragment> originalFragments) {
-        if (handshakeMessageType != HandshakeMessageType.CLIENT_KEY_EXCHANGE) {
-            return originalFragments;
-        }
-
-        List<ProtocolMessage> messages = dynamicClientKeyExchangeAction.getSendMessages();
-        if (messages.isEmpty()) {
-            return originalFragments;
-        }
-
-        try {
-            ClientKeyExchangeMessage<?> clientKeyExchangeMessage = (ClientKeyExchangeMessage<?>) messages.get(0);
-            ClientKeyExchangeBuilder clientKeyExchangeBuilder = new ClientKeyExchangeBuilder(getAnalysisConfig(), getTlsContext(), clientKeyExchangeMessage);
-
-            return clientKeyExchangeBuilder.buildFragmentsForMessage(mergedFragment);
-        } catch (OverlappingFragmentException e) {
-            LOGGER.error("Encountered error while creating fragments: {}", e.getMessage());
-            return originalFragments;
-        }
     }
 
     @Override

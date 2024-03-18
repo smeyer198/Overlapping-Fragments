@@ -21,6 +21,7 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.NONE)
 public class AnalysisConfig {
 
+    @XmlElement(name = "tlsAttackerConfig")
     private final Config tlsAttackerConfig;
 
     @XmlElementWrapper(name = "fragments")
@@ -28,7 +29,7 @@ public class AnalysisConfig {
     private List<FragmentConfig> fragments = new ArrayList<>();
 
     @XmlElement(name = "message")
-    private Message message = Message.NONE;
+    private MessageType messageType = MessageType.NONE;
 
     @XmlElement(name = "dhPrivateKey")
     private String dhPrivateKey = "FFFF";
@@ -63,9 +64,9 @@ public class AnalysisConfig {
     private CipherSuite updateCipherSuite = null;
 
     @XmlTransient
-    private HandshakeMessageType messageType;
+    private HandshakeMessageType handshakeMessageType;
 
-    private AnalysisConfig() {
+    public AnalysisConfig() {
         tlsAttackerConfig = new Config();
 
         tlsAttackerConfig.setHighestProtocolVersion(ProtocolVersion.DTLS12);
@@ -93,16 +94,24 @@ public class AnalysisConfig {
         return fragments;
     }
 
-    public Message getMessage() {
-        return message;
+    public void setFragments(List<FragmentConfig> fragments) {
+        this.fragments = fragments;
     }
 
-    public HandshakeMessageType getMessageType() {
+    public MessageType getMessageType() {
         return messageType;
     }
 
-    public void setMessageType(HandshakeMessageType messageType) {
+    public void setMessageType(MessageType messageType) {
         this.messageType = messageType;
+    }
+
+    public HandshakeMessageType getHandshakeMessageType() {
+        return handshakeMessageType;
+    }
+
+    public void setHandshakeMessageType(HandshakeMessageType handshakeMessageType) {
+        this.handshakeMessageType = handshakeMessageType;
     }
 
     @XmlElement(name = "clientHelloVersion")

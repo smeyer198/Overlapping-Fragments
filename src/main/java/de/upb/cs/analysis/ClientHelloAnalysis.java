@@ -1,12 +1,10 @@
 package de.upb.cs.analysis;
 
-import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ChangeCipherSpecMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HelloVerifyRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloDoneMessage;
@@ -17,13 +15,12 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicClientKeyExchangeAction;
 import de.upb.cs.action.AdvancedChangeCipherSuiteAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
-import de.upb.cs.config.Message;
 import de.upb.cs.config.AnalysisConfig;
+import de.upb.cs.config.Constants;
+import de.upb.cs.config.MessageType;
 import de.upb.cs.message.ClientHelloBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class ClientHelloAnalysis extends AbstractAnalysis {
 
@@ -31,19 +28,29 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
     private final ClientHelloBuilder clientHelloBuilder;
 
     public ClientHelloAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
-        super(analysisConfig, "client");
+        super(analysisConfig, Constants.CLIENT_CONTEXT);
 
-        this.clientHelloBuilder = new ClientHelloBuilder(getAnalysisConfig(), getTlsContext());
+        ClientHelloMessage clientHelloMessage = new ClientHelloMessage(getConfig());
+        this.clientHelloBuilder = new ClientHelloBuilder(getAnalysisConfig(), getTlsContext(), clientHelloMessage);
     }
 
     @Override
     public void initializeWorkflowTrace() {
         if (isCookieExchange()) {
-            getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
+            if (getAnalysisConfig().getMessageType() == MessageType.INITIAL_CLIENT_HELLO) {
+                addSendFragmentsActionToTrace(clientHelloBuilder);
+            } else {
+                getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
+            }
             getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new HelloVerifyRequestMessage()));
         }
 
-        getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
+        if (getAnalysisConfig().getMessageType() == MessageType.CLIENT_HELLO) {
+            addSendFragmentsActionToTrace(clientHelloBuilder);
+        } else {
+            getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
+        }
+        //getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
 
         if (getAnalysisConfig().getUpdateProtocolVersion() != null) {
             ChangeProtocolVersionAction protocolVersionAction = new ChangeProtocolVersionAction(getAnalysisConfig().getUpdateProtocolVersion());
@@ -82,28 +89,6 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
     }
 
     @Override
-    protected List<DtlsHandshakeMessageFragment> fragmentMessage(HandshakeMessageType handshakeMessageType, DtlsHandshakeMessageFragment mergedFragment, List<DtlsHandshakeMessageFragment> originalFragments) {
-        if (handshakeMessageType != HandshakeMessageType.CLIENT_HELLO) {
-            return originalFragments;
-        }
-
-        try {
-            // Fragment the initial ClientHello message
-            if (getAnalysisConfig().getMessage() == Message.INITIAL_CLIENT_HELLO && isInitialClientHello()) {
-                return clientHelloBuilder.buildFragmentsForMessage(mergedFragment);
-            }
-
-            // Fragment the second ClientHello message
-            if (getAnalysisConfig().getMessage() == Message.CLIENT_HELLO && !isInitialClientHello()) {
-                return clientHelloBuilder.buildFragmentsForMessage(mergedFragment);
-            }
-        } catch (OverlappingFragmentException e) {
-            LOGGER.error("Encountered error while creating fragments: {}", e.getMessage());
-        }
-        return originalFragments;
-    }
-
-    @Override
     public void analyzeResults() {
         ResultsHandler resultsHandler = new ResultsHandler(
                 getAnalysisConfig(),
@@ -120,15 +105,4 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
             LOGGER.info("Received Fatal Alert");
         }
     }
-
-    private boolean isInitialClientHello() {
-        byte[] cookie = getTlsContext().getDtlsCookie();
-
-        if (cookie == null) {
-            return true;
-        }
-
-        return cookie.length == 0;
-    }
-
 }

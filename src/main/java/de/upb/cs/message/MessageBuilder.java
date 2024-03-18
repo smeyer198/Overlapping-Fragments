@@ -1,24 +1,14 @@
 package de.upb.cs.message;
 
-import de.rub.nds.tlsattacker.core.certificate.CertificateKeyPair;
-import de.rub.nds.tlsattacker.core.certificate.PemUtil;
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
+import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
-import de.upb.cs.config.Constants;
 import de.upb.cs.config.AnalysisConfig;
-import org.bouncycastle.crypto.tls.Certificate;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import de.upb.cs.config.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.Security;
-import java.security.cert.CertificateException;
 import java.util.List;
 
 public abstract class MessageBuilder {
@@ -28,19 +18,12 @@ public abstract class MessageBuilder {
     protected final AnalysisConfig analysisConfig;
     protected final TlsContext context;
     protected final FragmentBuilder fragmentBuilder;
+    private HandshakeMessage<?> handshakeMessage;
 
     public MessageBuilder(AnalysisConfig analysisConfig, TlsContext context) {
         this.analysisConfig = analysisConfig;
         this.context = context;
         this.fragmentBuilder = new FragmentBuilder();
-
-        Config config = analysisConfig.getTlsAttackerConfig();
-
-        CertificateKeyPair keyPair = loadCertificate();
-        if (keyPair != null) {
-            config.setDefaultExplicitCertificateKeyPair(keyPair);
-            config.setAutoSelectCertificate(false);
-        }
     }
 
     public int parseOffset(int offset, int messageLength) {
@@ -61,23 +44,17 @@ public abstract class MessageBuilder {
         return length;
     }
 
-    private CertificateKeyPair loadCertificate() {
-        if (analysisConfig.getCertificatePath().isEmpty() && analysisConfig.getCertificateKeyPath().isEmpty()) {
-            LOGGER.debug("Using certificate from TLS-Attacker");
-            return null;
-        }
-
-        try {
-            Security.addProvider(new BouncyCastleProvider());
-
-            Certificate certificate = PemUtil.readCertificate(new File(analysisConfig.getCertificatePath()));
-            PrivateKey key = PemUtil.readPrivateKey(new File(analysisConfig.getCertificateKeyPath()));
-
-            return new CertificateKeyPair(certificate, key);
-        } catch (CertificateException | IOException | NoSuchProviderException e) {
-            throw new RuntimeException(e);
-        }
+    public HandshakeMessage<?> getHandshakeMessage() {
+        return handshakeMessage;
     }
 
-    public abstract List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException;
+    protected void setHandshakeMessage(HandshakeMessage<?> handshakeMessage) {
+        this.handshakeMessage = handshakeMessage;
+    }
+
+    public int getWriteMessageSequence() {
+        return context.getDtlsFragmentLayer().getWriteHandshakeMessageSequence();
+    }
+
+    public abstract List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException;
 }

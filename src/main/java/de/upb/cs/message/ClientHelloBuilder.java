@@ -1,7 +1,9 @@
 package de.upb.cs.message;
 
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
+import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
+import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
@@ -16,16 +18,18 @@ import java.util.List;
 
 public class ClientHelloBuilder extends MessageBuilder {
 
-    public ClientHelloBuilder(AnalysisConfig analysisConfig, TlsContext context) {
+    public ClientHelloBuilder(AnalysisConfig analysisConfig, TlsContext context, ClientHelloMessage clientHelloMessage) {
         super(analysisConfig, context);
+
+        setHandshakeMessage(clientHelloMessage);
     }
 
     @Override
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(final DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException {
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            int messageLength = originalFragment.getFragmentContentConfig().length;
+            int messageLength = message.getLength().getValue();
             int offset = parseOffset(fragmentConfig.getOffset(), messageLength);
             int length = parseLength(fragmentConfig.getLength(), offset, messageLength);
 
@@ -42,10 +46,26 @@ public class ClientHelloBuilder extends MessageBuilder {
                 int index = parseOverrideIndex(fragmentConfig.getOverrideConfig());
                 byte[] byteValue = Utils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
 
-                DtlsHandshakeMessageFragment manipulatedFragment = fragmentBuilder.overwriteBytes(originalFragment, index, byteValue);
-                fragment = fragmentBuilder.buildFragment(manipulatedFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
+                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(message.getMessageContent().getValue(), index, byteValue);
+                fragment = fragmentBuilder.buildFragment(
+                        message.getHandshakeMessageType(),
+                        manipulatedBytes,
+                        messageLength,
+                        offset,
+                        length,
+                        getWriteMessageSequence(),
+                        fragmentConfig.getPrependBytes(),
+                        fragmentConfig.getAppendBytes());
             } else {
-                fragment = fragmentBuilder.buildFragment(originalFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
+                fragment = fragmentBuilder.buildFragment(
+                        message.getHandshakeMessageType(),
+                        message.getMessageContent().getValue(),
+                        messageLength,
+                        offset,
+                        length,
+                        getWriteMessageSequence(),
+                        fragmentConfig.getPrependBytes(),
+                        fragmentConfig.getAppendBytes());
             }
 
             fragments.add(fragment);

@@ -21,7 +21,15 @@ public class LengthConfig {
         return length;
     }
 
+    public void setLength(int length) {
+        this.length = length;
+    }
+
     public Field getField() {
         return field;
+    }
+
+    public void setField(Field field) {
+        this.field = field;
     }
 }

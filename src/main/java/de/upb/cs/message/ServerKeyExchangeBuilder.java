@@ -7,13 +7,14 @@ import de.rub.nds.tlsattacker.core.crypto.ec.PointFormatter;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DHEServerKeyExchangeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
+import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerKeyExchangeMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.Constants;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
-import de.upb.cs.config.Message;
+import de.upb.cs.config.MessageType;
 import de.upb.cs.config.OffsetConfig;
 import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.OverrideConfig;
@@ -25,29 +26,25 @@ import java.util.List;
 
 public class ServerKeyExchangeBuilder extends MessageBuilder {
 
-    private final ServerKeyExchangeMessage<?> serverKeyExchangeMessage;
-
-    public ServerKeyExchangeBuilder(AnalysisConfig analysisConfig, TlsContext context, ServerKeyExchangeMessage<?> serverKeyExchangeMessage) {
+    public ServerKeyExchangeBuilder(AnalysisConfig analysisConfig, TlsContext context) {
         super(analysisConfig, context);
-
-        this.serverKeyExchangeMessage = serverKeyExchangeMessage;
     }
 
     @Override
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
-        Message message = analysisConfig.getMessage();
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException {
+        MessageType targetMessageType = analysisConfig.getMessageType();
 
-        switch (message) {
+        switch (targetMessageType) {
             case DH_SERVER_KEY_EXCHANGE:
-                return buildFragmentsForDHServerKeyExchange(originalFragment);
+                return buildFragmentsForDHServerKeyExchange(message);
             case ECDH_SERVER_KEY_EXCHANGE:
-                return buildFragmentsForECDHServerKeyExchange(originalFragment);
+                return buildFragmentsForECDHServerKeyExchange(message);
             default:
-                throw new OverlappingFragmentException("Message " + message + " is not a ServerKeyExchange message");
+                throw new OverlappingFragmentException("Message " + targetMessageType + " is not a ServerKeyExchange message");
         }
     }
 
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForDHServerKeyExchange(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForDHServerKeyExchange(HandshakeMessage<?> message) throws OverlappingFragmentException {
         BigInteger privateDhKey = new BigInteger(analysisConfig.getDhPrivateKey(), 16);
         BigInteger publicDhKey = KeyComputation.computeDhPublicKey(privateDhKey, context);
         byte[] publicDhKeyBytes = ArrayConverter.bigIntegerToByteArray(publicDhKey);
@@ -62,13 +59,13 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(originalFragment, fragmentConfig, publicDhKeyBytes);
+            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(message, fragmentConfig, publicDhKeyBytes);
             fragments.add(fragment);
         }
         return fragments;
     }
 
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForECDHServerKeyExchange(DtlsHandshakeMessageFragment originalFragment) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForECDHServerKeyExchange(HandshakeMessage<?> message) throws OverlappingFragmentException {
         NamedGroup group = context.getChooser().getSelectedNamedGroup();
         BigInteger privateEcKey = new BigInteger(analysisConfig.getEcPrivateKey());
         Point publicEcKey = KeyComputation.computeEcPublicKey(privateEcKey, group);
@@ -84,14 +81,14 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(originalFragment, fragmentConfig, publicEcKeyBytes);
+            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(message, fragmentConfig, publicEcKeyBytes);
             fragments.add(fragment);
         }
         return fragments;
     }
 
-    public DtlsHandshakeMessageFragment createFragmentFromConfig(DtlsHandshakeMessageFragment originalFragment, FragmentConfig fragmentConfig, byte[] publicKey) throws OverlappingFragmentException {
-        int messageLength = originalFragment.getFragmentContentConfig().length;
+    public DtlsHandshakeMessageFragment createFragmentFromConfig(HandshakeMessage<?> message, FragmentConfig fragmentConfig, byte[] publicKey) throws OverlappingFragmentException {
+        int messageLength = message.getLength().getValue();
         int offset = parseOffset(fragmentConfig.getOffset(), messageLength);
         int length = parseLength(fragmentConfig.getLength(), offset, messageLength);
 
@@ -103,36 +100,101 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
             length = parseLength(fragmentConfig.getLengthConfig(), offset, messageLength);
         }
 
-        byte[] originalPublicKey = serverKeyExchangeMessage.getPublicKey().getOriginalValue();
+        ServerKeyExchangeMessage<?> serverKeyExchangeMessage = (ServerKeyExchangeMessage<?>) getHandshakeMessage();
+        byte[] originalPublicKey = serverKeyExchangeMessage.getPublicKey().getValue();
 
         if (fragmentConfig.getAppendBytes().equals(Constants.ORIGINAL_PUBLIC_KEY_LABEL)) {
-            return fragmentBuilder.buildFragment(originalFragment, offset, length, new byte[]{}, originalPublicKey);
+            return fragmentBuilder.buildFragment(
+                    message.getHandshakeMessageType(),
+                    message.getMessageContent().getValue(),
+                    messageLength,
+                    offset,
+                    length,
+                    getWriteMessageSequence(),
+                    new byte[]{},
+                    originalPublicKey);
         } else if (fragmentConfig.getPrependBytes().equals(Constants.ORIGINAL_PUBLIC_KEY_LABEL)) {
-            return fragmentBuilder.buildFragment(originalFragment, offset, length, originalPublicKey, new byte[]{});
+            return fragmentBuilder.buildFragment(
+                    message.getHandshakeMessageType(),
+                    message.getMessageContent().getValue(),
+                    messageLength,
+                    offset,
+                    length,
+                    getWriteMessageSequence(),
+                    originalPublicKey,
+                    new byte[]{});
         } else if (fragmentConfig.getAppendBytes().equals(Constants.MANIPULATED_PUBLIC_KEY_LABEL)) {
-            return fragmentBuilder.buildFragment(originalFragment, offset, length, new byte[]{}, publicKey);
+            return fragmentBuilder.buildFragment(
+                    message.getHandshakeMessageType(),
+                    message.getMessageContent().getValue(),
+                    messageLength,
+                    offset,
+                    length,
+                    getWriteMessageSequence(),
+                    new byte[]{},
+                    publicKey);
         } else if (fragmentConfig.getPrependBytes().equals(Constants.MANIPULATED_PUBLIC_KEY_LABEL)) {
-            return fragmentBuilder.buildFragment(originalFragment, offset, length, publicKey, new byte[]{});
+            return fragmentBuilder.buildFragment(
+                    message.getHandshakeMessageType(),
+                    message.getMessageContent().getValue(),
+                    messageLength,
+                    offset,
+                    length,
+                    getWriteMessageSequence(),
+                    publicKey,
+                    new byte[]{});
         }
 
         if (fragmentConfig.getOverrideConfig() != null) {
             if (fragmentConfig.getOverrideConfig().getBytes().equals(Constants.ORIGINAL_PUBLIC_KEY_LABEL)) {
-                return fragmentBuilder.buildFragment(originalFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
+                return fragmentBuilder.buildFragment(
+                        message.getHandshakeMessageType(),
+                        message.getMessageContent().getValue(),
+                        messageLength,
+                        offset,
+                        length,
+                        getWriteMessageSequence(),
+                        fragmentConfig.getPrependBytes(),
+                        fragmentConfig.getAppendBytes());
             } else if (fragmentConfig.getOverrideConfig().getBytes().equals(Constants.MANIPULATED_PUBLIC_KEY_LABEL)) {
                 int startIndex = parseOverrideIndex(fragmentConfig.getOverrideConfig());
-                DtlsHandshakeMessageFragment manipulatedFragment = fragmentBuilder.overwriteBytes(originalFragment, startIndex, publicKey);
+                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(message.getMessageContent().getValue(), startIndex, publicKey);
 
-                return fragmentBuilder.buildFragment(manipulatedFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
+                return fragmentBuilder.buildFragment(
+                        message.getHandshakeMessageType(),
+                        manipulatedBytes,
+                        messageLength,
+                        offset,
+                        length,
+                        getWriteMessageSequence(),
+                        fragmentConfig.getPrependBytes(),
+                        fragmentConfig.getAppendBytes());
             } else {
                 int index = parseOverrideIndex(fragmentConfig.getOverrideConfig());
                 byte[] byteValue = Utils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
 
-                DtlsHandshakeMessageFragment manipulatedFragment = fragmentBuilder.overwriteBytes(originalFragment, index, byteValue);
-                return fragmentBuilder.buildFragment(manipulatedFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
+                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(message.getMessageContent().getValue(), index, byteValue);
+                return fragmentBuilder.buildFragment(
+                        message.getHandshakeMessageType(),
+                        manipulatedBytes,
+                        messageLength,
+                        offset,
+                        length,
+                        getWriteMessageSequence(),
+                        fragmentConfig.getPrependBytes(),
+                        fragmentConfig.getAppendBytes());
             }
         }
 
-        return fragmentBuilder.buildFragment(originalFragment, offset, length, fragmentConfig.getPrependBytes(), fragmentConfig.getAppendBytes());
+        return fragmentBuilder.buildFragment(
+                message.getHandshakeMessageType(),
+                message.getMessageContent().getValue(),
+                messageLength,
+                offset,
+                length,
+                getWriteMessageSequence(),
+                fragmentConfig.getPrependBytes(),
+                fragmentConfig.getAppendBytes());
     }
 
     public int parseOffset(OffsetConfig offsetConfig, int messageLength) throws OverlappingFragmentException {
@@ -145,12 +207,12 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
                 }
                 return offsetConfig.getOffset();
             case PUBLIC_KEY:
-                if (analysisConfig.getMessage() == Message.DH_SERVER_KEY_EXCHANGE) {
+                if (analysisConfig.getMessageType() == MessageType.DH_SERVER_KEY_EXCHANGE) {
                     return getDHPublicKeyIndex() + offsetConfig.getOffset();
-                } else if (analysisConfig.getMessage() == Message.ECDH_SERVER_KEY_EXCHANGE) {
+                } else if (analysisConfig.getMessageType() == MessageType.ECDH_SERVER_KEY_EXCHANGE) {
                     return getECDHPublicKeyIndex() + offsetConfig.getOffset();
                 } else {
-                    throw new OverlappingFragmentException("Message " + analysisConfig.getMessage() + " is not allowed in ServerKeyExchange");
+                    throw new OverlappingFragmentException("Message " + analysisConfig.getMessageType() + " is not allowed in ServerKeyExchange");
                 }
             default:
                 throw new OverlappingFragmentException("Field " + field + " is not allowed in ServerKeyExchange");
@@ -170,12 +232,12 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
                 }
                 return lengthConfig.getLength();
             case PUBLIC_KEY:
-                if (analysisConfig.getMessage() == Message.DH_SERVER_KEY_EXCHANGE) {
+                if (analysisConfig.getMessageType() == MessageType.DH_SERVER_KEY_EXCHANGE) {
                     return getDHPublicKeyIndex() + lengthConfig.getLength();
-                } else if (analysisConfig.getMessage() == Message.ECDH_SERVER_KEY_EXCHANGE) {
+                } else if (analysisConfig.getMessageType() == MessageType.ECDH_SERVER_KEY_EXCHANGE) {
                     return getECDHPublicKeyIndex() + lengthConfig.getLength();
                 } else {
-                    throw new OverlappingFragmentException("Message " + analysisConfig.getMessage() + " is not allowed in ServerKeyExchange");
+                    throw new OverlappingFragmentException("Message " + analysisConfig.getMessageType() + " is not allowed in ServerKeyExchange");
                 }
         }
         return lengthConfig.getLength();
@@ -188,12 +250,12 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
             case NONE:
                 return overrideConfig.getIndex();
             case PUBLIC_KEY:
-                if (analysisConfig.getMessage() == Message.DH_SERVER_KEY_EXCHANGE) {
+                if (analysisConfig.getMessageType() == MessageType.DH_SERVER_KEY_EXCHANGE) {
                     return getDHPublicKeyIndex() + overrideConfig.getIndex();
-                } else if (analysisConfig.getMessage() == Message.ECDH_SERVER_KEY_EXCHANGE) {
+                } else if (analysisConfig.getMessageType() == MessageType.ECDH_SERVER_KEY_EXCHANGE) {
                     return getECDHPublicKeyIndex() + overrideConfig.getIndex();
                 } else {
-                    throw new OverlappingFragmentException("Message " + analysisConfig.getMessage() + " is not allowed in ServerKeyExchange");
+                    throw new OverlappingFragmentException("Message " + analysisConfig.getMessageType() + " is not allowed in ServerKeyExchange");
                 }
             default:
                 throw new OverlappingFragmentException("Field " + field + " is not allowed in ServerKeyExchange");
@@ -202,8 +264,8 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
 
     public int getDHPublicKeyIndex() {
         // Modulus Length (2) + Modulus + Generator Length (2) + Generator + Public Key Length (2)
-        int pLength = ((DHEServerKeyExchangeMessage<?>) serverKeyExchangeMessage).getModulusLength().getOriginalValue();
-        int gLength = ((DHEServerKeyExchangeMessage<?>) serverKeyExchangeMessage).getGeneratorLength().getOriginalValue();
+        int pLength = ((DHEServerKeyExchangeMessage<?>) getHandshakeMessage()).getModulusLength().getOriginalValue();
+        int gLength = ((DHEServerKeyExchangeMessage<?>) getHandshakeMessage()).getGeneratorLength().getOriginalValue();
 
         return 2 + pLength + 2 + gLength + 2;
     }
@@ -211,5 +273,9 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
     public int getECDHPublicKeyIndex() {
         // Curve Type (1) + Named Curve (2) + Public Key Length (1)
         return 1 + 2 + 1;
+    }
+
+    public void setServerKeyExchangeMessage(ServerKeyExchangeMessage<?> serverKeyExchangeMessage) {
+        setHandshakeMessage(serverKeyExchangeMessage);
     }
 }

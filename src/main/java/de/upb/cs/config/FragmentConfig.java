@@ -36,28 +36,55 @@ public class FragmentConfig {
         return offset;
     }
 
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
     public OffsetConfig getOffsetConfig() {
         return offsetConfig;
+    }
+
+    public void setOffsetConfig(OffsetConfig offsetConfig) {
+        this.offsetConfig = offsetConfig;
     }
 
     public int getLength() {
         return length;
     }
 
+    public void setLength(int length) {
+        this.length = length;
+    }
+
     public LengthConfig getLengthConfig() {
         return lengthConfig;
+    }
+
+    public void setLengthConfig(LengthConfig lengthConfig) {
+        this.lengthConfig = lengthConfig;
     }
 
     public OverrideConfig getOverrideConfig() {
         return overrideConfig;
     }
 
+    public void setOverrideConfig(OverrideConfig overrideConfig) {
+        this.overrideConfig = overrideConfig;
+    }
+
     public String getPrependBytes() {
         return prependBytes;
+    }
+
+    public void setPrependBytes(String prependBytes) {
+        this.prependBytes = prependBytes;
     }
 
     public String getAppendBytes() {
         return appendBytes;
     }
 
+    public void setAppendBytes(String appendBytes) {
+        this.appendBytes = appendBytes;
+    }
 }

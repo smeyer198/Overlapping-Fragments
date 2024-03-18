@@ -13,11 +13,14 @@ import de.upb.cs.analysis.ClientKeyExchangeAnalysis;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.analysis.ServerHelloAnalysis;
 import de.upb.cs.analysis.ServerKeyExchangeAnalysis;
-import de.upb.cs.config.ConnectionConfig;
-import de.upb.cs.config.Message;
 import de.upb.cs.config.AnalysisConfig;
+import de.upb.cs.config.ConnectionConfig;
+import de.upb.cs.config.FragmentConfig;
+import de.upb.cs.config.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 public class OverlappingFragmentAnalysis {
 
@@ -29,6 +32,32 @@ public class OverlappingFragmentAnalysis {
         this.connectionConfig = connectionConfig;
         this.analysisConfig = analysisConfig;
         initializeDtlsFields();
+    }
+
+
+    public static void main(String[] args) throws OverlappingFragmentException {
+        ConnectionConfig connectionConfig = new ConnectionConfig();
+        connectionConfig.setClientHostname("172.19.142.193");
+        connectionConfig.setClientPort(8090);
+        connectionConfig.setServerHostname("localhost");
+        connectionConfig.setServerPort(8080);
+
+        AnalysisConfig config = new AnalysisConfig();
+        config.setOverlappingBytesInDigest(true);
+
+        FragmentConfig fragmentConfig = new FragmentConfig();
+        fragmentConfig.setOffset(0);
+        fragmentConfig.setLength(36);
+        fragmentConfig.setAppendBytes("2F");
+
+        FragmentConfig fragmentConfig1 = new FragmentConfig();
+        fragmentConfig1.setOffset(36);
+
+        config.setFragments(Arrays.asList(fragmentConfig, fragmentConfig1));
+        config.setMessageType(MessageType.ECDH_SERVER_KEY_EXCHANGE);
+
+        OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, config);
+        analysis.executeAnalysis();
     }
 
     public void executeAnalysis() throws OverlappingFragmentException {
@@ -76,28 +105,28 @@ public class OverlappingFragmentAnalysis {
     }
 
     private AbstractAnalysis getAnalysis() throws OverlappingFragmentException {
-        Message message = analysisConfig.getMessage();
+        MessageType messageType = analysisConfig.getMessageType();
 
-        switch (message) {
+        switch (messageType) {
             case NONE:
             case INITIAL_CLIENT_HELLO:
             case CLIENT_HELLO:
-                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_HELLO);
+                analysisConfig.setHandshakeMessageType(HandshakeMessageType.CLIENT_HELLO);
                 return new ClientHelloAnalysis(analysisConfig);
             case RSA_CLIENT_KEY_EXCHANGE:
             case DH_CLIENT_KEY_EXCHANGE:
             case ECDH_CLIENT_KEY_EXCHANGE:
-                analysisConfig.setMessageType(HandshakeMessageType.CLIENT_KEY_EXCHANGE);
+                analysisConfig.setHandshakeMessageType(HandshakeMessageType.CLIENT_KEY_EXCHANGE);
                 return new ClientKeyExchangeAnalysis(analysisConfig);
             case SERVER_HELLO:
-                analysisConfig.setMessageType(HandshakeMessageType.SERVER_HELLO);
+                analysisConfig.setHandshakeMessageType(HandshakeMessageType.SERVER_HELLO);
                 return new ServerHelloAnalysis(analysisConfig);
             case DH_SERVER_KEY_EXCHANGE:
             case ECDH_SERVER_KEY_EXCHANGE:
-                analysisConfig.setMessageType(HandshakeMessageType.SERVER_KEY_EXCHANGE);
+                analysisConfig.setHandshakeMessageType(HandshakeMessageType.SERVER_KEY_EXCHANGE);
                 return new ServerKeyExchangeAnalysis(analysisConfig);
             default:
-                throw new OverlappingFragmentException("Cannot create analysis for message " + message);
+                throw new OverlappingFragmentException("Cannot create analysis for message " + messageType);
         }
     }
 }

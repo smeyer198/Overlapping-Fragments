@@ -1,12 +1,10 @@
 package de.upb.cs.analysis;
 
-import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.CertificateVerifyMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ChangeCipherSpecMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HelloVerifyRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloDoneMessage;
@@ -18,21 +16,18 @@ import de.rub.nds.tlsattacker.core.workflow.action.SendDynamicServerKeyExchangeA
 import de.upb.cs.action.AdvancedChangeCipherSuiteAction;
 import de.upb.cs.action.ReceiveDynamicClientKeyExchangeAction;
 import de.upb.cs.config.AnalysisConfig;
+import de.upb.cs.config.Constants;
 import de.upb.cs.message.ServerHelloBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class ServerHelloAnalysis extends AbstractAnalysis {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerHelloAnalysis.class);
     private final ServerHelloBuilder serverHelloBuilder;
 
     public ServerHelloAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
-        super(analysisConfig, "server");
+        super(analysisConfig, Constants.SERVER_CONTEXT);
 
-        this.serverHelloBuilder = new ServerHelloBuilder(getAnalysisConfig(), getTlsContext());
+        ServerHelloMessage serverHelloMessage = new ServerHelloMessage(getConfig());
+        this.serverHelloBuilder = new ServerHelloBuilder(getAnalysisConfig(), getTlsContext(), serverHelloMessage);
     }
 
     @Override
@@ -43,7 +38,8 @@ public class ServerHelloAnalysis extends AbstractAnalysis {
         }
 
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new ClientHelloMessage()));
-        getTrace().addTlsAction(new SendAction(getAliasContext(), new ServerHelloMessage(getConfig())));
+        //getTrace().addTlsAction(new SendFragmentsAction(getAliasContext(), serverHelloBuilder));
+        addSendFragmentsActionToTrace(serverHelloBuilder);
 
         if (getAnalysisConfig().getUpdateProtocolVersion() != null) {
             ChangeProtocolVersionAction protocolVersionAction = new ChangeProtocolVersionAction(getAnalysisConfig().getUpdateProtocolVersion());
@@ -78,20 +74,6 @@ public class ServerHelloAnalysis extends AbstractAnalysis {
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new FinishedMessage()));
         getTrace().addTlsAction(new SendAction(getAliasContext(), new ChangeCipherSpecMessage()));
         getTrace().addTlsAction(new SendAction(getAliasContext(), new FinishedMessage()));
-    }
-
-    @Override
-    protected List<DtlsHandshakeMessageFragment> fragmentMessage(HandshakeMessageType handshakeMessageType, DtlsHandshakeMessageFragment mergedFragment, List<DtlsHandshakeMessageFragment> originalFragments) {
-        if (handshakeMessageType != HandshakeMessageType.SERVER_HELLO) {
-            return originalFragments;
-        }
-
-        try {
-            return serverHelloBuilder.buildFragmentsForMessage(mergedFragment);
-        } catch (OverlappingFragmentException e) {
-            LOGGER.error("Encountered error while creating fragments: {}", e.getMessage());
-            return originalFragments;
-        }
     }
 
     @Override
