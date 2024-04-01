@@ -18,7 +18,17 @@ public class OverrideConfig {
     @XmlElement(name = "field")
     private Field field = Field.NONE;
 
-    public OverrideConfig() {}
+    private OverrideConfig() {}
+
+    public OverrideConfig(int index, String bytes) {
+        this(index, bytes, Field.NONE);
+    }
+
+    public OverrideConfig(int index, String bytes, Field field) {
+        this.index = index;
+        this.bytes = bytes;
+        this.field = field;
+    }
 
     public int getIndex() {
         return index;

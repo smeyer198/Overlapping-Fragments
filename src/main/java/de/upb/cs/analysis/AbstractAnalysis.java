@@ -88,7 +88,7 @@ public abstract class AbstractAnalysis {
 
     public abstract void initializeWorkflowTrace();
 
-    public abstract void analyzeResults();
+    public abstract AnalysisResults analyzeResults();
 
     public AnalysisConfig getAnalysisConfig() {
         return analysisConfig;

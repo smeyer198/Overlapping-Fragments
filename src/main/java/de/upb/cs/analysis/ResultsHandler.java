@@ -27,12 +27,14 @@ public class ResultsHandler {
     private final TlsContext context;
     private final WorkflowTrace trace;
     private final DigestHandler digestHandler;
+    private final AnalysisResults results;
 
     public ResultsHandler(AnalysisConfig analysisConfig, TlsContext context, WorkflowTrace trace, DigestHandler digestHandler) {
         this.analysisConfig = analysisConfig;
         this.context = context;
         this.trace = trace;
         this.digestHandler = digestHandler;
+        this.results = new AnalysisResults();
     }
 
     public void inspectWorkflowTrace() {
@@ -49,7 +51,9 @@ public class ResultsHandler {
         if (firstFailedAction != null) {
             sb.append("\n");
             sb.append(firstFailedAction);
+            results.setFirstFailedMessageAction(firstFailedAction);
         }
+        results.setHandshakeExecutedAsPlanned(trace.allActionsExecuted());
         LOGGER.info(sb.toString());
     }
 
@@ -91,11 +95,16 @@ public class ResultsHandler {
                 } else {
                     LOGGER.error("No Verify Data match");
                 }
+                results.setReceivedFinishedMessage(true);
+                results.setFinishedMac(finishedVerifyData);
+                results.setOriginalFinishedMac(finishedVerifyData);
+                results.setManipulatedFinishedMac(verifyDataManipulatedTrace);
             } else {
                 // In this case, the handshake failed because either the client aborted the handshake
                 // or TLS-Attacker was not able to deal with the Finished message (e.g. it used the wrong
                 // encryption algorithm)
                 LOGGER.info("Did not receive ClientFinished message or unable to decrypt ClientFinished message");
+                results.setReceivedFinishedMessage(false);
             }
         } catch (CryptoException e) {
             LOGGER.error("Error while computing the verify data bytes");
@@ -135,6 +144,10 @@ public class ResultsHandler {
                         LOGGER.info("MISMATCH 2");
                     }
                 }
+                results.setReceivedFinishedMessage(true);
+                results.setFinishedMac(finishedVerifyData);
+                results.setOriginalFinishedMac(verifyDataOriginalTrace);
+                results.setManipulatedFinishedMac(verifyDataManipulatedTrace);
             } else {
                 if (isDecryptError()) {
                     if (analysisConfig.isOverlappingBytesInDigest()) {
@@ -178,4 +191,23 @@ public class ResultsHandler {
         return false;
     }
 
+    public void logResults() {
+        if (!results.isHandshakeExecutedAsPlanned()) {
+            LOGGER.info("Handshake not executed as planned");
+        }
+
+        if (results.receivedFinishedMessage()) {
+            LOGGER.info("VerifyData:\n" +
+                            "\tFinished:    {}\n" +
+                            "\tOriginal:    {}\n" +
+                            "\tManipulated: {}\n",
+                    Utils.bytesToHexString(results.getFinishedMac()),
+                    Utils.bytesToHexString(results.getOriginalFinishedMac()),
+                    Utils.bytesToHexString(results.getManipulatedFinishedMac()));
+        }
+    }
+
+    public AnalysisResults getResults() {
+        return results;
+    }
 }

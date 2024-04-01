@@ -15,21 +15,22 @@ public class LengthConfig {
     @XmlElement(name = "field")
     private Field field = Field.NONE;
 
-    public LengthConfig() {}
+    private LengthConfig() {}
+
+    public LengthConfig(int length) {
+        this(length, Field.NONE);
+    }
+
+    public LengthConfig(int length, Field field) {
+        this.length = length;
+        this.field = field;
+    }
 
     public int getLength() {
         return length;
     }
 
-    public void setLength(int length) {
-        this.length = length;
-    }
-
     public Field getField() {
         return field;
-    }
-
-    public void setField(Field field) {
-        this.field = field;
     }
 }

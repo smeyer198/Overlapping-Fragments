@@ -244,6 +244,15 @@ public class AnalysisConfig {
         tlsAttackerConfig.setAddRenegotiationInfoExtension(addRenegotiationInfoExtension);
     }
 
+    @XmlElement(name = "maxDtlsRetransmissions")
+    public int getMaxDtlsRetransmissions() {
+        return tlsAttackerConfig.getMaxDtlsRetransmissions();
+    }
+
+    public void setMaxDtlsRetransmissions(int maxDtlsRetransmissions) {
+        tlsAttackerConfig.setMaxDtlsRetransmissions(maxDtlsRetransmissions);
+    }
+
     public boolean isClientAuthentication() {
         return clientAuthentication;
     }

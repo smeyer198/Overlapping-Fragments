@@ -89,7 +89,7 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
     }
 
     @Override
-    public void analyzeResults() {
+    public AnalysisResults analyzeResults() {
         ResultsHandler resultsHandler = new ResultsHandler(
                 getAnalysisConfig(),
                 getTlsContext(),
@@ -104,5 +104,7 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
         if (getTlsContext().isReceivedFatalAlert()) {
             LOGGER.info("Received Fatal Alert");
         }
+
+        return resultsHandler.getResults();
     }
 }

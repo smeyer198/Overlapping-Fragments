@@ -15,21 +15,22 @@ public class OffsetConfig {
     @XmlElement(name = "field")
     private Field field = Field.NONE;
 
-    public OffsetConfig() {}
+    private OffsetConfig() {}
+
+    public OffsetConfig(int offset) {
+        this(offset, Field.NONE);
+    }
+
+    public OffsetConfig(int offset, Field field) {
+        this.offset = offset;
+        this.field = field;
+    }
 
     public int getOffset() {
         return offset;
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
     public Field getField() {
         return field;
-    }
-
-    public void setField(Field field) {
-        this.field = field;
     }
 }

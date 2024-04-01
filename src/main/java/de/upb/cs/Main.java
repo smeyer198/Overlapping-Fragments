@@ -1,29 +1,41 @@
 package de.upb.cs;
 
 import com.beust.jcommander.JCommander;
+import de.rub.nds.tlsattacker.core.state.State;
+import de.rub.nds.tlsattacker.core.workflow.WorkflowExecutor;
+import de.rub.nds.tlsattacker.core.workflow.WorkflowExecutorFactory;
+import de.rub.nds.tlsattacker.core.workflow.action.executor.WorkflowExecutorType;
+import de.upb.cs.analysis.AbstractAnalysis;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.ConnectionConfig;
-import de.upb.cs.config.AnalysisConfig;
-import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 
 public class Main {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingFragmentAnalysis.class);
 
     public static void main(String[] args) throws OverlappingFragmentException, JAXBException, FileNotFoundException {
         AnalysisSettings settings = new AnalysisSettings();
         JCommander.newBuilder().addObject(settings).build().parse(args);
 
+        LOGGER.info("Setup analysis...");
         ConnectionConfig connectionConfig = Main.createConnectionConfig(settings);
 
-        JAXBContext context = JAXBContext.newInstance(AnalysisConfig.class);
-        FileReader reader = new FileReader(settings.getAnalysisConfigPath());
-        AnalysisConfig analysisConfig = (AnalysisConfig) context.createUnmarshaller().unmarshal(reader);
+        AbstractAnalysis analysis = OverlappingFragmentAnalysis.getOverlappingFragmentAnalysis(connectionConfig, settings.getAnalysisConfigPath());
+        analysis.initializeWorkflowTrace();
+        LOGGER.info("Analysis setup done");
 
-        OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, analysisConfig);
-        analysis.executeAnalysis();
+        LOGGER.info("Starting analysis...");
+        State state = analysis.getState();
+        WorkflowExecutor workflowExecutor = WorkflowExecutorFactory.createWorkflowExecutor(WorkflowExecutorType.DTLS, state);
+        workflowExecutor.executeWorkflow();
+        LOGGER.info("Analysis finished");
+
+        analysis.analyzeResults();
     }
 
     public static ConnectionConfig createConnectionConfig(AnalysisSettings settings) {
