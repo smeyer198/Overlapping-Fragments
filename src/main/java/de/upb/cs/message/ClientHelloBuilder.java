@@ -1,9 +1,12 @@
 package de.upb.cs.message;
 
+import de.rub.nds.tlsattacker.core.constants.ExtensionType;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.extension.ExtensionMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.extension.SignatureAlgorithmsCertExtensionMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
@@ -18,18 +21,21 @@ import java.util.List;
 
 public class ClientHelloBuilder extends MessageBuilder {
 
-    public ClientHelloBuilder(AnalysisConfig analysisConfig, TlsContext context, ClientHelloMessage clientHelloMessage) {
+    public ClientHelloBuilder(AnalysisConfig analysisConfig, TlsContext context) {
         super(analysisConfig, context);
-
-        setHandshakeMessage(clientHelloMessage);
     }
 
     @Override
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage() throws OverlappingFragmentException {
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
+        ClientHelloMessage clientHelloMessage = new ClientHelloMessage(analysisConfig.getTlsAttackerConfig());
+        prepareMessage(clientHelloMessage);
+        setHandshakeMessage(clientHelloMessage);
+        adjustContext(clientHelloMessage);
+
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            int messageLength = message.getLength().getValue();
+            int messageLength = getHandshakeMessage().getLength().getValue();
             int offset = parseOffset(fragmentConfig.getOffset(), messageLength);
             int length = parseLength(fragmentConfig.getLength(), offset, messageLength);
 
@@ -46,9 +52,9 @@ public class ClientHelloBuilder extends MessageBuilder {
                 int index = parseOverrideIndex(fragmentConfig.getOverrideConfig());
                 byte[] byteValue = Utils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
 
-                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(message.getMessageContent().getValue(), index, byteValue);
+                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(getHandshakeMessage().getMessageContent().getValue(), index, byteValue);
                 fragment = fragmentBuilder.buildFragment(
-                        message.getHandshakeMessageType(),
+                        getHandshakeMessage().getHandshakeMessageType(),
                         manipulatedBytes,
                         messageLength,
                         offset,
@@ -58,8 +64,8 @@ public class ClientHelloBuilder extends MessageBuilder {
                         fragmentConfig.getAppendBytes());
             } else {
                 fragment = fragmentBuilder.buildFragment(
-                        message.getHandshakeMessageType(),
-                        message.getMessageContent().getValue(),
+                        getHandshakeMessage().getHandshakeMessageType(),
+                        getHandshakeMessage().getMessageContent().getValue(),
                         messageLength,
                         offset,
                         length,
@@ -144,7 +150,18 @@ public class ClientHelloBuilder extends MessageBuilder {
     }
 
     public int getExtensionIndex() {
+        ClientHelloMessage clientHelloMessage = (ClientHelloMessage) getHandshakeMessage();
+
+        int index = 0;
+        for (ExtensionMessage<?> extension : clientHelloMessage.getExtensions()) {
+            if (extension.getExtensionTypeConstant().equals(ExtensionType.SIGNATURE_AND_HASH_ALGORITHMS)) {
+                index += 2 + 6;
+                break;
+            }
+
+            index += extension.getExtensionBytes().getValue().length;
+        }
         // Version(2) + Random + SessionIDLength(1) + CookieLength(1) + Cookie + CipherSuiteLength(2) + CipherSuites + CompressionMethodsLength(1) + CompressionMethods(1) + ExtensionsLength(2) + Type(2), Length(2), SignatureLength(2)
-        return 2 + context.getClientRandom().length + 1 + 1 + context.getDtlsCookie().length + 2 + analysisConfig.getClientHelloCipherSuites().size() * 2 + 1 + 1 + 2 + 6;
+        return 2 + context.getClientRandom().length + 1 + 1 + context.getDtlsCookie().length + 2 + analysisConfig.getClientHelloCipherSuites().size() * 2 + 1 + 1 + index;
     }
 }

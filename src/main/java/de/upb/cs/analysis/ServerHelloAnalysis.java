@@ -8,7 +8,6 @@ import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HelloVerifyRequestMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloDoneMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloMessage;
 import de.rub.nds.tlsattacker.core.workflow.action.ChangeProtocolVersionAction;
 import de.rub.nds.tlsattacker.core.workflow.action.ReceiveAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendAction;
@@ -26,8 +25,7 @@ public class ServerHelloAnalysis extends AbstractAnalysis {
     public ServerHelloAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
         super(analysisConfig, Constants.SERVER_CONTEXT);
 
-        ServerHelloMessage serverHelloMessage = new ServerHelloMessage(getConfig());
-        this.serverHelloBuilder = new ServerHelloBuilder(getAnalysisConfig(), getTlsContext(), serverHelloMessage);
+        this.serverHelloBuilder = new ServerHelloBuilder(getAnalysisConfig(), getTlsContext());
     }
 
     @Override
@@ -38,7 +36,6 @@ public class ServerHelloAnalysis extends AbstractAnalysis {
         }
 
         getTrace().addTlsAction(new ReceiveAction(getAliasContext(), new ClientHelloMessage()));
-        //getTrace().addTlsAction(new SendFragmentsAction(getAliasContext(), serverHelloBuilder));
         addSendFragmentsActionToTrace(serverHelloBuilder);
 
         if (getAnalysisConfig().getUpdateProtocolVersion() != null) {

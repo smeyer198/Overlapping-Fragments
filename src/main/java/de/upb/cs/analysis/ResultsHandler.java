@@ -10,6 +10,7 @@ import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.AlertMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloMessage;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTraceUtil;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
@@ -58,13 +59,23 @@ public class ResultsHandler {
     }
 
     public void inspectHandshakeParameters() {
+        ServerHelloMessage serverHelloMessage = trace.getLastReceivedMessage(ServerHelloMessage.class);
+
+        results.setReceivedServerHelloMessage(serverHelloMessage != null);
+
+        if (results.isReceivedServerHelloMessage()) {
+            results.setSelectedVersion(context.getSelectedProtocolVersion());
+            results.setSelectedCipherSuite(context.getSelectedCipherSuite());
+            results.setSelectedSignatureAndHashAlgorithm(context.getSelectedSignatureAndHashAlgorithm());
+        }
+
         String hp = "Handshake parameters:" + "\n\t" +
                 "Proposed DTLS version: " + context.getChooser().getHighestProtocolVersion() +
-                "\n\tSelected DTLS version: " + context.getSelectedProtocolVersion() +
+                "\n\tSelected DTLS version: " + results.getSelectedVersion() +
                 "\n\tProposed Cipher Suite: " + context.getChooser().getClientSupportedCipherSuites() +
-                "\n\tSelected Cipher Suite: " + context.getSelectedCipherSuite() +
+                "\n\tSelected Cipher Suite: " + results.getSelectedCipherSuite() +
                 "\n\tProposed SignatureAndHashAlgorithms: " + context.getChooser().getClientSupportedSignatureAndHashAlgorithms() +
-                "\n\tSelected SignatureAndHashAlgorithm: " + context.getSelectedSignatureAndHashAlgorithm() +
+                "\n\tSelected SignatureAndHashAlgorithm: " + results.getSelectedSignatureAndHashAlgorithm() +
                 "\n";
         LOGGER.info(hp);
     }
@@ -172,7 +183,7 @@ public class ResultsHandler {
     }
 
     private boolean isDecryptError() {
-        MessageAction failingAction = (MessageAction) WorkflowTraceUtil.getFirstFailedAction(trace);
+        MessageAction failingAction = (MessageAction) results.getFirstFailedMessageAction();
 
         if (failingAction == null) {
             return false;

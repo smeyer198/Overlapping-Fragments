@@ -2,34 +2,36 @@ package de.upb.cs.message;
 
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
-import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
+import de.upb.cs.analysis.Utils;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.OffsetConfig;
-import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.OverrideConfig;
-import de.upb.cs.analysis.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServerHelloBuilder extends MessageBuilder {
 
-    public ServerHelloBuilder(AnalysisConfig analysisConfig, TlsContext context, ServerHelloMessage serverHelloMessage) {
+    public ServerHelloBuilder(AnalysisConfig analysisConfig, TlsContext context) {
         super(analysisConfig, context);
-
-        setHandshakeMessage(serverHelloMessage);
     }
 
     @Override
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage() throws OverlappingFragmentException {
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
+        ServerHelloMessage serverHelloMessage = new ServerHelloMessage(analysisConfig.getTlsAttackerConfig());
+        prepareMessage(serverHelloMessage);
+        setHandshakeMessage(serverHelloMessage);
+        adjustContext(serverHelloMessage);
+
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            int messageLength = message.getLength().getValue();
+            int messageLength = getHandshakeMessage().getLength().getValue();
             int offset = parseOffset(fragmentConfig.getOffset(), messageLength);
             int length = parseLength(fragmentConfig.getLength(), offset, messageLength);
 
@@ -46,9 +48,9 @@ public class ServerHelloBuilder extends MessageBuilder {
                 int index = parseOverrideIndex(fragmentConfig.getOverrideConfig());
                 byte[] byteValue = Utils.hexToByteArray(fragmentConfig.getOverrideConfig().getBytes());
 
-                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(message.getMessageContent().getValue(), index, byteValue);
+                byte[] manipulatedBytes = fragmentBuilder.overwriteBytes(getHandshakeMessage().getMessageContent().getValue(), index, byteValue);
                 fragment = fragmentBuilder.buildFragment(
-                        message.getHandshakeMessageType(),
+                        getHandshakeMessage().getHandshakeMessageType(),
                         manipulatedBytes,
                         messageLength,
                         offset,
@@ -58,8 +60,8 @@ public class ServerHelloBuilder extends MessageBuilder {
                         fragmentConfig.getAppendBytes());
             } else {
                 fragment = fragmentBuilder.buildFragment(
-                        message.getHandshakeMessageType(),
-                        message.getMessageContent().getValue(),
+                        getHandshakeMessage().getHandshakeMessageType(),
+                        getHandshakeMessage().getMessageContent().getValue(),
                         messageLength,
                         offset,
                         length,

@@ -6,8 +6,6 @@ import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
 import de.rub.nds.tlsattacker.core.protocol.handler.HandshakeMessageHandler;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
-import de.rub.nds.tlsattacker.core.protocol.preparator.HandshakeMessagePreparator;
-import de.rub.nds.tlsattacker.core.protocol.serializer.HandshakeMessageSerializer;
 import de.rub.nds.tlsattacker.core.record.Record;
 import de.rub.nds.tlsattacker.core.state.State;
 import de.rub.nds.tlsattacker.core.workflow.action.MessageAction;
@@ -33,16 +31,13 @@ public class SendFragmentsAction extends MessageAction implements SendingAction 
     public void execute(State state) throws ActionExecutionException {
         TlsContext tlsContext = state.getContext(getConnectionAlias()).getTlsContext();
 
-        // Initialize the message and update the context
-        HandshakeMessage<?> handshakeMessage = messageBuilder.getHandshakeMessage();
-        processMessage(handshakeMessage, tlsContext);
-
         try {
-            List<DtlsHandshakeMessageFragment> messageFragments = messageBuilder.buildFragmentsForMessage(handshakeMessage);
+            List<DtlsHandshakeMessageFragment> messageFragments = messageBuilder.buildFragmentsForMessage();
             fragments.addAll(messageFragments);
             Utils.logFragments(messageBuilder.getHandshakeMessage(), messageFragments);
 
             send(tlsContext, messages, fragments, records, httpMessages);
+            updateDigest(messageBuilder.getHandshakeMessage(), tlsContext);
 
             tlsContext.getDtlsFragmentLayer().increaseWriteHandshakeMessageSequence();
         } catch (OverlappingFragmentException | IOException e) {
@@ -53,18 +48,8 @@ public class SendFragmentsAction extends MessageAction implements SendingAction 
         setExecuted(true);
     }
 
-    public void processMessage(HandshakeMessage message, TlsContext tlsContext) {
-        HandshakeMessagePreparator preparator = message.getPreparator(tlsContext);
-        preparator.prepare();
-        preparator.afterPrepare();
-
-        HandshakeMessageSerializer serializer = message.getSerializer(tlsContext);
-        byte[] serializedMessage = serializer.serialize();
-        message.setCompleteResultingMessage(serializedMessage);
-
-        HandshakeMessageHandler handler = message.getHandler(tlsContext);
-        handler.adjustContext(message);
-        handler.adjustContextAfterSerialize(message);
+    public void updateDigest(HandshakeMessage<?> message, TlsContext context) {
+        HandshakeMessageHandler<?> handler = message.getHandler(context);
         handler.updateDigest(message, true);
     }
 

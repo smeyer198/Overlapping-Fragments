@@ -30,8 +30,7 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
     public ClientHelloAnalysis(AnalysisConfig analysisConfig) throws OverlappingFragmentException {
         super(analysisConfig, Constants.CLIENT_CONTEXT);
 
-        ClientHelloMessage clientHelloMessage = new ClientHelloMessage(getConfig());
-        this.clientHelloBuilder = new ClientHelloBuilder(getAnalysisConfig(), getTlsContext(), clientHelloMessage);
+        this.clientHelloBuilder = new ClientHelloBuilder(getAnalysisConfig(), getTlsContext());
     }
 
     @Override
@@ -50,7 +49,6 @@ public class ClientHelloAnalysis extends AbstractAnalysis {
         } else {
             getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
         }
-        //getTrace().addTlsAction(new SendAction(getAliasContext(), new ClientHelloMessage(getConfig())));
 
         if (getAnalysisConfig().getUpdateProtocolVersion() != null) {
             ChangeProtocolVersionAction protocolVersionAction = new ChangeProtocolVersionAction(getAnalysisConfig().getUpdateProtocolVersion());

@@ -1,8 +1,14 @@
 package de.upb.cs.message;
 
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
+import de.rub.nds.tlsattacker.core.protocol.handler.HandshakeMessageHandler;
+import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.ClientKeyExchangeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
 import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
+import de.rub.nds.tlsattacker.core.protocol.preparator.HandshakeMessagePreparator;
+import de.rub.nds.tlsattacker.core.protocol.serializer.HandshakeMessageSerializer;
+import de.rub.nds.tlsattacker.transport.ConnectionEndType;
 import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.Constants;
@@ -56,5 +62,24 @@ public abstract class MessageBuilder {
         return context.getDtlsFragmentLayer().getWriteHandshakeMessageSequence();
     }
 
-    public abstract List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException;
+    public void prepareMessage(HandshakeMessage message) {
+        if (message instanceof ClientHelloMessage || message instanceof ClientKeyExchangeMessage) {
+            context.getChooser().getContext().setTalkingConnectionEndType(ConnectionEndType.CLIENT);
+        }
+        HandshakeMessagePreparator preparator = message.getPreparator(context);
+        preparator.prepare();
+        preparator.afterPrepare();
+
+        HandshakeMessageSerializer serializer = message.getSerializer(context);
+        byte[] serializedMessage = serializer.serialize();
+        message.setCompleteResultingMessage(serializedMessage);
+    }
+
+    public void adjustContext(HandshakeMessage message) {
+        HandshakeMessageHandler handler = message.getHandler(context);
+        handler.adjustContext(message);
+        handler.adjustContextAfterSerialize(message);
+    }
+
+    public abstract List<DtlsHandshakeMessageFragment> buildFragmentsForMessage() throws OverlappingFragmentException;
 }

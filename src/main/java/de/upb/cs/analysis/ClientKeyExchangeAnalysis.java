@@ -11,7 +11,6 @@ import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloDoneMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloMessage;
 import de.rub.nds.tlsattacker.core.workflow.action.ReceiveAction;
 import de.rub.nds.tlsattacker.core.workflow.action.SendAction;
-import de.upb.cs.action.ComputeDynamicClientKeyExchangeAction;
 import de.upb.cs.action.ReceiveDynamicServerKeyExchangeAction;
 import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.Constants;
@@ -49,8 +48,6 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
             getTrace().addTlsAction(new SendAction(getAliasContext(), new CertificateMessage()));
         }
 
-        getTrace().addTlsAction(new ComputeDynamicClientKeyExchangeAction(getAliasContext(), clientKeyExchangeBuilder));
-        // getTrace().addTlsAction(new SendFragmentsAction(getAliasContext(), clientKeyExchangeBuilder));
         addSendFragmentsActionToTrace(clientKeyExchangeBuilder);
 
         if (isClientAuthentication()) {
@@ -72,6 +69,8 @@ public class ClientKeyExchangeAnalysis extends AbstractAnalysis {
                 getDigestHandler()
         );
         resultsHandler.inspectWorkflowTrace();
+        resultsHandler.inspectHandshakeParameters();
+
         resultsHandler.verifyServerFinishedMessage();
 
         if (getTlsContext().isReceivedFatalAlert()) {

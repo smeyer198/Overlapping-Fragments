@@ -1,24 +1,22 @@
 package de.upb.cs.message;
 
 import de.rub.nds.modifiablevariable.util.ArrayConverter;
-import de.rub.nds.tlsattacker.core.constants.NamedGroup;
-import de.rub.nds.tlsattacker.core.crypto.ec.Point;
-import de.rub.nds.tlsattacker.core.crypto.ec.PointFormatter;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DHEServerKeyExchangeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
+import de.rub.nds.tlsattacker.core.protocol.message.ECDHEServerKeyExchangeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerKeyExchangeMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
+import de.upb.cs.analysis.Utils;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.Constants;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.MessageType;
 import de.upb.cs.config.OffsetConfig;
-import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.OverrideConfig;
-import de.upb.cs.analysis.Utils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -31,59 +29,78 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
     }
 
     @Override
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage(HandshakeMessage<?> message) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForMessage() throws OverlappingFragmentException {
         MessageType targetMessageType = analysisConfig.getMessageType();
 
         switch (targetMessageType) {
             case DH_SERVER_KEY_EXCHANGE:
-                return buildFragmentsForDHServerKeyExchange(message);
+                return buildFragmentsForDHServerKeyExchange();
             case ECDH_SERVER_KEY_EXCHANGE:
-                return buildFragmentsForECDHServerKeyExchange(message);
+                return buildFragmentsForECDHServerKeyExchange();
             default:
                 throw new OverlappingFragmentException("Message " + targetMessageType + " is not a ServerKeyExchange message");
         }
     }
 
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForDHServerKeyExchange(HandshakeMessage<?> message) throws OverlappingFragmentException {
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForDHServerKeyExchange() throws OverlappingFragmentException {
         BigInteger privateDhKey = new BigInteger(analysisConfig.getDhPrivateKey(), 16);
-        BigInteger publicDhKey = KeyComputation.computeDhPublicKey(privateDhKey, context);
-        byte[] publicDhKeyBytes = ArrayConverter.bigIntegerToByteArray(publicDhKey);
 
-        LOGGER.info("Updated DH Public Key:\n{}", ArrayConverter.bytesToHexString(publicDhKeyBytes));
+        DHEServerKeyExchangeMessage<?> skeWithOriginalPublicKey = new DHEServerKeyExchangeMessage<>();
+        prepareMessage(skeWithOriginalPublicKey);
+        setHandshakeMessage(skeWithOriginalPublicKey);
 
-        if (analysisConfig.isUseUpdatedKeys()) {
-            context.setServerDhPrivateKey(privateDhKey);
-            context.setServerDhPublicKey(publicDhKey);
-        }
+        DHEServerKeyExchangeMessage<?> skeWithUpdatedPublicKey = new DHEServerKeyExchangeMessage<>();
+        context.setServerDhPrivateKey(privateDhKey);
+        prepareMessage(skeWithUpdatedPublicKey);
+
+        byte[] updatedPublicKeyBytes = skeWithUpdatedPublicKey.getPublicKey().getValue();
+        LOGGER.info("Updated DH Public Key:\n{}", ArrayConverter.bytesToHexString(updatedPublicKeyBytes));
 
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(message, fragmentConfig, publicDhKeyBytes);
+            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(skeWithOriginalPublicKey, fragmentConfig, updatedPublicKeyBytes);
             fragments.add(fragment);
         }
+
+        if (analysisConfig.isUseUpdatedKeys()) {
+            adjustContext(skeWithUpdatedPublicKey);
+        } else {
+            context.setServerDhPrivateKey(analysisConfig.getTlsAttackerConfig().getDefaultServerDhPrivateKey());
+            adjustContext(skeWithOriginalPublicKey);
+        }
+
         return fragments;
     }
 
-    public List<DtlsHandshakeMessageFragment> buildFragmentsForECDHServerKeyExchange(HandshakeMessage<?> message) throws OverlappingFragmentException {
-        NamedGroup group = context.getChooser().getSelectedNamedGroup();
+    public List<DtlsHandshakeMessageFragment> buildFragmentsForECDHServerKeyExchange() throws OverlappingFragmentException {
         BigInteger privateEcKey = new BigInteger(analysisConfig.getEcPrivateKey());
-        Point publicEcKey = KeyComputation.computeEcPublicKey(privateEcKey, group);
-        byte[] publicEcKeyBytes = PointFormatter.formatToByteArray(group, publicEcKey, analysisConfig.getServerHelloPointFormat());
 
-        LOGGER.info("Updated EC Public Point:\n{}", ArrayConverter.bytesToHexString(publicEcKeyBytes));
+        ECDHEServerKeyExchangeMessage<?> skeWithOriginalPublicKey = new ECDHEServerKeyExchangeMessage<>();
+        prepareMessage(skeWithOriginalPublicKey);
+        setHandshakeMessage(skeWithOriginalPublicKey);
 
-        if (analysisConfig.isUseUpdatedKeys()) {
-            context.setServerEcPrivateKey(privateEcKey);
-            context.setServerEcPublicKey(publicEcKey);
-        }
+        ECDHEServerKeyExchangeMessage<?> skeWithUpdatedPublicKey = new ECDHEServerKeyExchangeMessage<>();
+        context.setServerEcPrivateKey(privateEcKey);
+        prepareMessage(skeWithUpdatedPublicKey);
+
+        byte[] updatedPublicKeyBytes = skeWithUpdatedPublicKey.getPublicKey().getValue();
+        LOGGER.info("Updated EC Public Point:\n{}", ArrayConverter.bytesToHexString(updatedPublicKeyBytes));
 
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
         for (FragmentConfig fragmentConfig : analysisConfig.getFragments()) {
-            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(message, fragmentConfig, publicEcKeyBytes);
+            DtlsHandshakeMessageFragment fragment = createFragmentFromConfig(skeWithOriginalPublicKey, fragmentConfig, updatedPublicKeyBytes);
             fragments.add(fragment);
         }
+
+        if (analysisConfig.isUseUpdatedKeys()) {
+            adjustContext(skeWithUpdatedPublicKey);
+        } else {
+            context.setServerEcPrivateKey(analysisConfig.getTlsAttackerConfig().getDefaultServerEcPrivateKey());
+            adjustContext(skeWithOriginalPublicKey);
+        }
+
         return fragments;
     }
 
@@ -273,9 +290,5 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
     public int getECDHPublicKeyIndex() {
         // Curve Type (1) + Named Curve (2) + Public Key Length (1)
         return 1 + 2 + 1;
-    }
-
-    public void setServerKeyExchangeMessage(ServerKeyExchangeMessage<?> serverKeyExchangeMessage) {
-        setHandshakeMessage(serverKeyExchangeMessage);
     }
 }

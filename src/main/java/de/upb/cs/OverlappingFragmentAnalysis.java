@@ -1,7 +1,9 @@
 package de.upb.cs;
 
+import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.CipherSuite;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
+import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
 import de.rub.nds.tlsattacker.core.layer.constant.LayerConfiguration;
 import de.rub.nds.tlsattacker.core.state.State;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowExecutor;
@@ -21,6 +23,7 @@ import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.MessageType;
 import de.upb.cs.config.OffsetConfig;
+import de.upb.cs.config.OverrideConfig;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import org.slf4j.Logger;
@@ -48,19 +51,19 @@ public class OverlappingFragmentAnalysis {
         connectionConfig.setServerPort(8080);
 
         AnalysisConfig config = new AnalysisConfig();
-        config.setOverlappingBytesInDigest(false);
-
-        FragmentConfig fragmentConfig1 = new FragmentConfig();
-        fragmentConfig1.setOffset(0);
-        fragmentConfig1.setLengthConfig(new LengthConfig(3, Field.CIPHER_SUITE));
-        //fragmentConfig1.setAppendBytes("2c");
-
-        FragmentConfig fragmentConfig2 = new FragmentConfig();
-        fragmentConfig2.setOffsetConfig(new OffsetConfig(3, Field.CIPHER_SUITE));
-
-        config.setFragments(Arrays.asList(fragmentConfig1, fragmentConfig2));
         config.setMessageType(MessageType.CLIENT_HELLO);
-        config.setClientHelloCipherSuites(Arrays.asList(CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256));
+        config.setClientHelloCipherSuites(Arrays.asList(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA));
+        config.setClientHelloSignatureAndHashAlgorithms(Arrays.asList(SignatureAndHashAlgorithm.RSA_SHA256, SignatureAndHashAlgorithm.ECDSA_SHA256));
+
+        FragmentConfig fragment1 = new FragmentConfig();
+        fragment1.setOffset(0);
+        fragment1.setLengthConfig(new LengthConfig(2, Field.EXTENSION));
+
+        FragmentConfig fragment2 = new FragmentConfig();
+        fragment2.setOffsetConfig(new OffsetConfig(2, Field.EXTENSION));
+        fragment2.setPrependBytes("03");
+
+        config.setFragments(Arrays.asList(fragment1, fragment2));
 
         OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, config);
         analysis.executeAnalysis();
@@ -123,7 +126,7 @@ public class OverlappingFragmentAnalysis {
         return getOverlappingFragmentAnalysis(analysisConfig);
     }
 
-    private static AbstractAnalysis getOverlappingFragmentAnalysis(AnalysisConfig config) throws OverlappingFragmentException {
+    public static AbstractAnalysis getOverlappingFragmentAnalysis(AnalysisConfig config) throws OverlappingFragmentException {
         MessageType messageType = config.getMessageType();
 
         switch (messageType) {

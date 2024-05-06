@@ -39,9 +39,9 @@ public abstract class AbstractAnalysis {
         this.aliasContext = aliasContext;
 
         AliasedConnection connection;
-        if (aliasContext.equals("client")) {
+        if (aliasContext.equals(Constants.CLIENT_CONTEXT)) {
             connection = analysisConfig.getTlsAttackerConfig().getDefaultClientConnection();
-        } else if (aliasContext.equals("server")) {
+        } else if (aliasContext.equals(Constants.SERVER_CONTEXT)) {
             connection = analysisConfig.getTlsAttackerConfig().getDefaultServerConnection();
         } else {
             throw new OverlappingFragmentException("Alias context must be either '" + Constants.CLIENT_CONTEXT  + "' or '" + Constants.SERVER_CONTEXT + "'");

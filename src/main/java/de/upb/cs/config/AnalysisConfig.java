@@ -22,7 +22,7 @@ import java.util.List;
 public class AnalysisConfig {
 
     @XmlElement(name = "tlsAttackerConfig")
-    private final Config tlsAttackerConfig;
+    private Config tlsAttackerConfig;
 
     @XmlElementWrapper(name = "fragments")
     @XmlElement(name = "fragment")
@@ -88,6 +88,10 @@ public class AnalysisConfig {
 
     public Config getTlsAttackerConfig() {
         return tlsAttackerConfig;
+    }
+
+    public void setTlsAttackerConfig(Config tlsAttackerConfig) {
+        this.tlsAttackerConfig = tlsAttackerConfig;
     }
 
     public List<FragmentConfig> getFragments() {
