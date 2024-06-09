@@ -25,6 +25,11 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.util.List;
 
+/**
+ * Base for the overlapping fragment analysis. There are subclasses for the ClientHello, ServerHello,
+ * ClientKeyExchange, and ServerKeyExchange message that initialize corresponding TLS-Attacker
+ * Configs and WorkflowTraces.
+ */
 public abstract class AbstractAnalysis {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractAnalysis.class);

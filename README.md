@@ -1,93 +1,160 @@
-# Overlapping Fragments
+# Overlapping Fragment Analysis
 
+Program to perform DTLS handshakes and arbitrarily fragment messages. The program can be installed with `mvn clean install`.
 
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+### Run programmatically
+Include the project as dependency:
 ```
-cd existing_repo
-git remote add origin https://git.cs.uni-paderborn.de/svemey98/overlapping-fragments.git
-git branch -M main
-git push -uf origin main
+<dependency>
+    <groupId>de.upb.cs</groupId>
+    <artifactId>OverlappingFragments</artifactId>
+    <version>1.0.0</version>
+</dependency>
 ```
 
-## Integrate with your tools
+Initialze an `AnalysisConfig`:
+```
+AnalysisConfig config = new AnalyisConfig();
+config.setMessage(MessageType.CLIENT_HELLO);
 
-- [ ] [Set up project integrations](https://git.cs.uni-paderborn.de/svemey98/overlapping-fragments/-/settings/integrations)
+config.setClientHelloCipherSuites(Arrays.asList(
+    CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA,
+    CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA));
 
-## Collaborate with your team
+// First fragment that ends after the first cipher suite
+FragmentConfig fragment1 = new FragmentConfig();
+fragment1.setOffset(0);
+fragment1.setLengthConfig(new LengthConfig(2, Field.CIPHER_SUITES));
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+// Second fragment that starts after the first cipher suite
+FragmentConfig fragment2 = new FragmentConfig();
+fragment2.setOffsetConfig(new OffsetConfig(2, FIELD.CIPHER_SUITES));
+fragment2.setPrependBytes("2F");    // Prepend injected bytes
 
-## Test and Deploy
+config.setFragments(Arrays.asList(fragment1, fragment2));
+```
+Run the program:
+```
+// Initialize the program based on an AnalysisConfig
+AbstractAnalysis analysis = OverlappingFragmentAnalysis.getAnalysis("127.0.0.1", 4433, analysisConfig);
 
-Use the built-in continuous integration in GitLab.
+// Prepare the state for TLS-Attacker
+analysis.initializeWorkflowTrace();
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+// Execute the handshake using TLS-Attacker
+State state = analysis.getState();
+DtlsWorkflowExecutor executor = new DtlsWorkflowExecutor(state);
+executor.executeWorkflow();
 
-***
+// Extract the results
+AnalysisResults results = analysis.getResults();
+```
 
-# Editing this README
+### Run from the command line:
+After installation with Maven, you can run the program with the jar file in the `target` directory.
+`java -cp OverlappingFragments.jar de.upb.cs.Main -hostname 127.0.0.1 -port 8090 -analysisConfig ./example_config.xml` 
+The `example_config.xml` can look like this:
+```XML
+<?xml version="1.0" encoding="UTF-8"?>
+<AnalysisConfig>
+    <message>CLIENT_HELLO</message>
+    <fragments>
+        <!-- First fragment -->
+        <fragment>
+            <offset>0</offset>
+            <lengthConfig>
+                <length>2</length>
+                <field>CIPHER_SUITES</field>
+            </lengthConfig>
+        </fragment>
+        <!-- Second fragment -->
+        <fragment>
+            <offsetConfig>
+                <offset>2</offset>
+                <field>CIPHER_SUITES</field>
+            </offsetConfig>
+            <prependBytes>2f</prependBytes>
+        </fragment>
+    </fragments>
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+    <clientHelloCipherSuites>
+        <cipherSuite>TLS_RSA_WITH_AES_256_CBC_SHA</cipherSuite>
+        <cipherSuite>TLS_RSA_WITH_AES_128_CBC_SHA</cipherSuite>
+    </clientHelloCipherSuites>
 
-## Suggestions for a good README
+    <overlappingBytesInDigest>false</overlappingBytesInDigest>
+</AnalysisConfig>
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+# Logs
+Running the program against DTLS servers (e.g. OpenSSL), the program logs the handshake and the results:
+```
+[main] INFO de.upb.cs.OverlappingFragmentAnalysis - Setup analysis...
+[main] INFO de.upb.cs.OverlappingFragmentAnalysis - Analysis setup done
+[main] INFO de.upb.cs.OverlappingFragmentAnalysis - Starting analysis...
+[main] INFO de.upb.cs.analysis.Utils -
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Message: CLIENT_HELLO
+        Original message:  FE FD FE 96 CB 99 60 B4 20 BB 38 51 D9 D4 7A CB 93 3D BE 70 39 9B F6 C9 2D A3 3A F0 1D 4F B7 70 E9 8C 00 14 0B 97 2C 7B 11 0C B1 AF 3D 35 05 53 80 4F 06 D8 CB F5 1E CD 00 04 00 35 00 2F 01 00 00 0D 00 0D 00 04 00 02 04 01 FF 01 00 01 00
+        Fragment 1:        FE FD FE 96 CB 99 60 B4 20 BB 38 51 D9 D4 7A CB 93 3D BE 70 39 9B F6 C9 2D A3 3A F0 1D 4F B7 70 E9 8C 00 14 0B 97 2C 7B 11 0C B1 AF 3D 35 05 53 80 4F 06 D8 CB F5 1E CD 00 04 00 35
+        Fragment 2:                                                                                                                                                                                         2F 00 2F 01 00 00 0D 00 0D 00 04 00 02 04 01 FF 01 00 01 00
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[main] INFO de.upb.cs.OverlappingFragmentAnalysis - Analysis finished
+[main] INFO de.upb.cs.analysis.ResultsHandler - Executed actions:
+Send Action:
+        Messages:CLIENT_HELLO,
 
-## Name
-Choose a self-explaining name for your project.
+Receive Action:
+        Expected:HELLO_VERIFY_REQUEST,
+        Actual:HELLO_VERIFY_REQUEST,
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+de.upb.cs.action.SendFragmentsAction@af12f4b8
+de.upb.cs.action.UpdateDigestAction@af12f4b8
+Receive Action:
+        Expected:SERVER_HELLO,
+        Actual:SERVER_HELLO,
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Receive Action:
+        Expected:CERTIFICATE,
+        Actual:CERTIFICATE,
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+Receive Dynamic Server Key Exchange Action:
+        Received no ServerKeyExchange message
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Receive Action:
+        Expected:SERVER_HELLO_DONE,
+        Actual:SERVER_HELLO_DONE,
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Send Dynamic Client Key Exchange Action:
+        Messages:RSA_CLIENT_KEY_EXCHANGE,
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Send Action:
+        Messages:CHANGE_CIPHER_SPEC,
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Send Action:
+        Messages:FINISHED,
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+Receive Action:
+        Expected:CHANGE_CIPHER_SPEC,
+        Actual:CHANGE_CIPHER_SPEC,
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Receive Action:
+        Expected:FINISHED,
+        Actual:FINISHED,
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+[main] INFO de.upb.cs.analysis.ResultsHandler - Handshake parameters:
+        Proposed DTLS version: DTLS12
+        Selected DTLS version: DTLS12
+        Proposed Cipher Suite: [TLS_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA]
+        Selected Cipher Suite: TLS_RSA_WITH_AES_128_CBC_SHA
+        Proposed SignatureAndHashAlgorithms: [RSA_SHA256]
+        Selected SignatureAndHashAlgorithm: RSA_SHA256
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+[main] INFO de.upb.cs.analysis.ResultsHandler - VerifyData:
+        Finished:    96 6D 66 82 A9 1C 25 50 FB AF 38 B6
+        Original:    FD 86 89 3D 81 47 C2 C5 4E F6 89 54
+        Manipulated: 96 6D 66 82 A9 1C 25 50 FB AF 38 B6
 
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+[main] INFO de.upb.cs.analysis.ResultsHandler - ClientFinished contained manipulated bytes, Server interpreted manipulated bytes
+```
+The injected byte `2F` is part of the second sent fragment. OpenSSL interpreted this byte because it selected the cipher suite `TLS_RSA_WITH_AES_128_CBC_SHA` and accepted the Finished message computed over the injected byte (overlappingBytesInDigest = true). Comparing the Verify Data value, the server's value is equal to the value that results when computing the Verify Data over the injected byte (Manipulated) and not the original message byte.

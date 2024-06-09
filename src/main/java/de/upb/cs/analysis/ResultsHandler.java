@@ -3,12 +3,14 @@ package de.upb.cs.analysis;
 import de.rub.nds.tlsattacker.core.constants.AlertDescription;
 import de.rub.nds.tlsattacker.core.constants.HandshakeByteLength;
 import de.rub.nds.tlsattacker.core.constants.PRFAlgorithm;
+import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
 import de.rub.nds.tlsattacker.core.crypto.MessageDigestCollector;
 import de.rub.nds.tlsattacker.core.crypto.PseudoRandomFunction;
 import de.rub.nds.tlsattacker.core.exceptions.CryptoException;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.ProtocolMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.AlertMessage;
+import de.rub.nds.tlsattacker.core.protocol.message.CertificateMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.FinishedMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.ServerHelloMessage;
 import de.rub.nds.tlsattacker.core.workflow.WorkflowTrace;
@@ -66,7 +68,12 @@ public class ResultsHandler {
         if (results.isReceivedServerHelloMessage()) {
             results.setSelectedVersion(context.getSelectedProtocolVersion());
             results.setSelectedCipherSuite(context.getSelectedCipherSuite());
-            results.setSelectedSignatureAndHashAlgorithm(context.getSelectedSignatureAndHashAlgorithm());
+
+            CertificateMessage certificateMessage = trace.getLastReceivedMessage(CertificateMessage.class);
+            if (certificateMessage != null) {
+                SignatureAndHashAlgorithm algorithmPair = certificateMessage.getCertificateKeyPair().getSignatureAndHashAlgorithm();
+                results.setSelectedSignatureAndHashAlgorithm(algorithmPair);
+            }
         }
 
         String hp = "Handshake parameters:" + "\n\t" +
@@ -200,22 +207,6 @@ public class ResultsHandler {
             }
         }
         return false;
-    }
-
-    public void logResults() {
-        if (!results.isHandshakeExecutedAsPlanned()) {
-            LOGGER.info("Handshake not executed as planned");
-        }
-
-        if (results.receivedFinishedMessage()) {
-            LOGGER.info("VerifyData:\n" +
-                            "\tFinished:    {}\n" +
-                            "\tOriginal:    {}\n" +
-                            "\tManipulated: {}\n",
-                    Utils.bytesToHexString(results.getFinishedMac()),
-                    Utils.bytesToHexString(results.getOriginalFinishedMac()),
-                    Utils.bytesToHexString(results.getManipulatedFinishedMac()));
-        }
     }
 
     public AnalysisResults getResults() {

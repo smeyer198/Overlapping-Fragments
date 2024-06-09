@@ -4,17 +4,15 @@ import de.rub.nds.tlsattacker.core.constants.ExtensionType;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.ClientHelloMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.DtlsHandshakeMessageFragment;
-import de.rub.nds.tlsattacker.core.protocol.message.HandshakeMessage;
 import de.rub.nds.tlsattacker.core.protocol.message.extension.ExtensionMessage;
-import de.rub.nds.tlsattacker.core.protocol.message.extension.SignatureAlgorithmsCertExtensionMessage;
 import de.upb.cs.analysis.OverlappingFragmentException;
+import de.upb.cs.analysis.Utils;
+import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.OffsetConfig;
-import de.upb.cs.config.AnalysisConfig;
 import de.upb.cs.config.OverrideConfig;
-import de.upb.cs.analysis.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +89,7 @@ public class ClientHelloBuilder extends MessageBuilder {
                 return offsetConfig.getOffset();
             case VERSION:
                 return getVersionIndex() + offsetConfig.getOffset();
-            case CIPHER_SUITE:
+            case CIPHER_SUITES:
                 return getCipherSuiteIndex() + offsetConfig.getOffset();
             case EXTENSION:
                 return getExtensionIndex() + offsetConfig.getOffset();
@@ -114,7 +112,7 @@ public class ClientHelloBuilder extends MessageBuilder {
                 return lengthConfig.getLength();
             case VERSION:
                 return getVersionIndex() + lengthConfig.getLength();
-            case CIPHER_SUITE:
+            case CIPHER_SUITES:
                 return getCipherSuiteIndex() + lengthConfig.getLength();
             case EXTENSION:
                 return getExtensionIndex() + lengthConfig.getLength();
@@ -131,7 +129,7 @@ public class ClientHelloBuilder extends MessageBuilder {
                 return overrideConfig.getIndex();
             case VERSION:
                 return getVersionIndex() + overrideConfig.getIndex();
-            case CIPHER_SUITE:
+            case CIPHER_SUITES:
                 return getCipherSuiteIndex() + overrideConfig.getIndex();
             case EXTENSION:
                 return getExtensionIndex() + overrideConfig.getIndex();

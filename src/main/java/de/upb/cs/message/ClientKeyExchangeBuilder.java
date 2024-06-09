@@ -69,10 +69,6 @@ public class ClientKeyExchangeBuilder extends MessageBuilder {
             context.setPreMasterSecret(ArrayConverter.concatenate(context.getSelectedProtocolVersion().getValue(), premasterSecret));
         }
 
-        BigInteger biPaddedPremasterSecret = new BigInteger(1, paddedPremasterSecret);
-        BigInteger biEncrypted = biPaddedPremasterSecret.modPow(context.getServerRSAPublicKey().abs(), context.getServerRSAModulus().abs());
-        byte[] rsaEncryptedPremasterSecret = ArrayConverter.bigIntegerToByteArray(biEncrypted, context.getServerRSAModulus().bitLength() / 8, true);
-
         long seed = 1234567;
 
         RSAClientKeyExchangeMessage<?> ckeWithOriginalPremasterSecret = new RSAClientKeyExchangeMessage<>();

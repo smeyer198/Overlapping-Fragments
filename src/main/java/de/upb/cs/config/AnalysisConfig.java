@@ -70,7 +70,9 @@ public class AnalysisConfig {
         tlsAttackerConfig = new Config();
 
         tlsAttackerConfig.setHighestProtocolVersion(ProtocolVersion.DTLS12);
-        tlsAttackerConfig.setDefaultClientSupportedCipherSuites(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+        tlsAttackerConfig.setDefaultClientSupportedCipherSuites(
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256);
         tlsAttackerConfig.setAddSignatureAndHashAlgorithmsExtension(true);
         tlsAttackerConfig.setDefaultClientSupportedSignatureAndHashAlgorithms(SignatureAndHashAlgorithm.RSA_SHA256);
         tlsAttackerConfig.setAddEllipticCurveExtension(false);
@@ -79,7 +81,7 @@ public class AnalysisConfig {
         tlsAttackerConfig.setDefaultClientSupportedPointFormats(ECPointFormat.UNCOMPRESSED);
 
         tlsAttackerConfig.setDefaultSelectedProtocolVersion(ProtocolVersion.DTLS12);
-        tlsAttackerConfig.setDefaultSelectedCipherSuite(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA);
+        tlsAttackerConfig.setDefaultSelectedCipherSuite(CipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384);
         tlsAttackerConfig.setDefaultSelectedSignatureAndHashAlgorithm(SignatureAndHashAlgorithm.RSA_SHA256);
         tlsAttackerConfig.setDefaultSelectedNamedGroup(NamedGroup.SECP256R1);
         tlsAttackerConfig.setDefaultSelectedPointFormat(ECPointFormat.UNCOMPRESSED);

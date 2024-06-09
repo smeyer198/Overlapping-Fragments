@@ -89,7 +89,7 @@ public class ServerHelloBuilder extends MessageBuilder {
                     return getVersionLastIndex() + offsetConfig.getOffset();
                 }
                 return getVersionFirstIndex() + offsetConfig.getOffset();
-            case CIPHER_SUITE:
+            case CIPHER_SUITES:
                 if (offsetConfig.getOffset() < 0) {
                     return getCipherSuiteLastIndex() + offsetConfig.getOffset();
                 }
@@ -113,7 +113,7 @@ public class ServerHelloBuilder extends MessageBuilder {
                 return lengthConfig.getLength();
             case VERSION:
                 return getVersionFirstIndex() + lengthConfig.getLength();
-            case CIPHER_SUITE:
+            case CIPHER_SUITES:
                 return getCipherSuiteFirstIndex() + lengthConfig.getLength();
             default:
                 throw new OverlappingFragmentException("Field " + field + " is not allowed in ServerHello");
@@ -128,7 +128,7 @@ public class ServerHelloBuilder extends MessageBuilder {
                 return overrideConfig.getIndex();
             case VERSION:
                 return getVersionFirstIndex() + overrideConfig.getIndex();
-            case CIPHER_SUITE:
+            case CIPHER_SUITES:
                 return getCipherSuiteFirstIndex() + overrideConfig.getIndex();
             default:
                 throw new OverlappingFragmentException("Field " + field + " is not allowed in ServerHello");

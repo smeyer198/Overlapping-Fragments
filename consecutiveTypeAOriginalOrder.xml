@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AnalysisConfig>
+	<message>DH_SERVER_KEY_EXCHANGE</message>
+	<fragments>
+		<fragment>
+			<offset>0</offset>
+			<lengthConfig>
+				<length>384</length>
+				<field>PUBLIC_KEY</field>
+			</lengthConfig>
+		</fragment>
+		<fragment>
+			<offsetConfig>
+				<offset>384</offset>
+				<field>PUBLIC_KEY</field>
+			</offsetConfig>
+			<prependBytes>MANIPULATED_PUBLIC_KEY</prependBytes>
+		</fragment>
+	</fragments>
+
+	<certificatePath>./certificates/rsa_cert.pem</certificatePath>
+	<certificateKeyPath>./certificates/rsa_cert_key.pem</certificateKeyPath>
+
+	<serverHelloCipherSuite>TLS_DHE_RSA_WITH_AES_256_CBC_SHA256</serverHelloCipherSuite>
+	<dhPrivateKey>FEFE</dhPrivateKey>
+	
+	<useIndividualDatagrams>true</useIndividualDatagrams>
+</AnalysisConfig>

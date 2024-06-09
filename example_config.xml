@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AnalysisConfig>
+    <message>CLIENT_HELLO</message>
+    <fragments>
+        <!-- First fragment -->
+        <fragment>
+            <offset>0</offset>
+            <lengthConfig>
+                <length>2</length>
+                <field>CIPHER_SUITES</field>
+            </lengthConfig>
+        </fragment>
+        <!-- Second fragment -->
+        <fragment>
+            <offsetConfig>
+                <offset>2</offset>
+                <field>CIPHER_SUITES</field>
+            </offsetConfig>
+            <prependBytes>2f</prependBytes>
+        </fragment>
+    </fragments>
+
+    <clientHelloCipherSuites>
+        <cipherSuite>TLS_RSA_WITH_AES_256_CBC_SHA</cipherSuite>
+        <cipherSuite>TLS_RSA_WITH_AES_128_CBC_SHA</cipherSuite>
+    </clientHelloCipherSuites>
+
+    <overlappingBytesInDigest>true</overlappingBytesInDigest>
+</AnalysisConfig>

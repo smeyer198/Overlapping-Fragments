@@ -55,10 +55,10 @@ public class DigestHandler {
                         manipulatedMessageBytes[dataIndex] = fragmentContent[i];
                     }
                 }
-                //LOGGER.info(sb.toString());
+                LOGGER.debug(sb.toString());
             }
         }
-        LOGGER.info("Manipulated fragment:\n\t{}", Utils.bytesToHexString(manipulatedMessageBytes));
+        //LOGGER.info("Manipulated fragment:\n\t{}", Utils.bytesToHexString(manipulatedMessageBytes));
     }
 
     public byte[] getManipulatedMessageBytes() {

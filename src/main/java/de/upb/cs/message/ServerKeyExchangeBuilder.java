@@ -1,5 +1,6 @@
 package de.upb.cs.message;
 
+import de.rub.nds.modifiablevariable.biginteger.ModifiableBigInteger;
 import de.rub.nds.modifiablevariable.util.ArrayConverter;
 import de.rub.nds.tlsattacker.core.layer.context.TlsContext;
 import de.rub.nds.tlsattacker.core.protocol.message.DHEServerKeyExchangeMessage;
@@ -50,11 +51,11 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
         setHandshakeMessage(skeWithOriginalPublicKey);
 
         DHEServerKeyExchangeMessage<?> skeWithUpdatedPublicKey = new DHEServerKeyExchangeMessage<>();
-        context.setServerDhPrivateKey(privateDhKey);
+        analysisConfig.getTlsAttackerConfig().setDefaultServerDhPrivateKey(privateDhKey);
         prepareMessage(skeWithUpdatedPublicKey);
 
         byte[] updatedPublicKeyBytes = skeWithUpdatedPublicKey.getPublicKey().getValue();
-        LOGGER.info("Updated DH Public Key:\n{}", ArrayConverter.bytesToHexString(updatedPublicKeyBytes));
+        LOGGER.info("Updated DH Public Key:{}", ArrayConverter.bytesToHexString(updatedPublicKeyBytes));
 
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
@@ -64,6 +65,7 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
         }
 
         if (analysisConfig.isUseUpdatedKeys()) {
+            context.setServerDhPrivateKey(privateDhKey);
             adjustContext(skeWithUpdatedPublicKey);
         } else {
             context.setServerDhPrivateKey(analysisConfig.getTlsAttackerConfig().getDefaultServerDhPrivateKey());
@@ -75,17 +77,19 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
 
     public List<DtlsHandshakeMessageFragment> buildFragmentsForECDHServerKeyExchange() throws OverlappingFragmentException {
         BigInteger privateEcKey = new BigInteger(analysisConfig.getEcPrivateKey());
+        ModifiableBigInteger modifiablePrivateEcKey = new ModifiableBigInteger();
+        modifiablePrivateEcKey.setOriginalValue(privateEcKey);
 
         ECDHEServerKeyExchangeMessage<?> skeWithOriginalPublicKey = new ECDHEServerKeyExchangeMessage<>();
         prepareMessage(skeWithOriginalPublicKey);
         setHandshakeMessage(skeWithOriginalPublicKey);
 
         ECDHEServerKeyExchangeMessage<?> skeWithUpdatedPublicKey = new ECDHEServerKeyExchangeMessage<>();
-        context.setServerEcPrivateKey(privateEcKey);
+        analysisConfig.getTlsAttackerConfig().setDefaultServerEcPrivateKey(privateEcKey);
         prepareMessage(skeWithUpdatedPublicKey);
 
         byte[] updatedPublicKeyBytes = skeWithUpdatedPublicKey.getPublicKey().getValue();
-        LOGGER.info("Updated EC Public Point:\n{}", ArrayConverter.bytesToHexString(updatedPublicKeyBytes));
+        LOGGER.info("Updated EC Public Point:{}", ArrayConverter.bytesToHexString(updatedPublicKeyBytes));
 
         List<DtlsHandshakeMessageFragment> fragments = new ArrayList<>();
 
@@ -95,6 +99,7 @@ public class ServerKeyExchangeBuilder extends MessageBuilder {
         }
 
         if (analysisConfig.isUseUpdatedKeys()) {
+            context.setServerEcPrivateKey(privateEcKey);
             adjustContext(skeWithUpdatedPublicKey);
         } else {
             context.setServerEcPrivateKey(analysisConfig.getTlsAttackerConfig().getDefaultServerEcPrivateKey());

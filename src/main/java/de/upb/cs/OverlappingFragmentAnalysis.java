@@ -1,6 +1,5 @@
 package de.upb.cs;
 
-import de.rub.nds.tlsattacker.core.config.Config;
 import de.rub.nds.tlsattacker.core.constants.CipherSuite;
 import de.rub.nds.tlsattacker.core.constants.HandshakeMessageType;
 import de.rub.nds.tlsattacker.core.constants.SignatureAndHashAlgorithm;
@@ -17,13 +16,11 @@ import de.upb.cs.analysis.OverlappingFragmentException;
 import de.upb.cs.analysis.ServerHelloAnalysis;
 import de.upb.cs.analysis.ServerKeyExchangeAnalysis;
 import de.upb.cs.config.AnalysisConfig;
-import de.upb.cs.config.ConnectionConfig;
 import de.upb.cs.config.Field;
 import de.upb.cs.config.FragmentConfig;
 import de.upb.cs.config.LengthConfig;
 import de.upb.cs.config.MessageType;
 import de.upb.cs.config.OffsetConfig;
-import de.upb.cs.config.OverrideConfig;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import org.slf4j.Logger;
@@ -32,27 +29,26 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Arrays;
+import java.util.List;
 
 public class OverlappingFragmentAnalysis {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlappingFragmentAnalysis.class);
     private final AnalysisConfig analysisConfig;
 
-    public OverlappingFragmentAnalysis(ConnectionConfig connectionConfig, AnalysisConfig analysisConfig) {
+    public OverlappingFragmentAnalysis(String hostname, int port, int timeout, AnalysisConfig analysisConfig) {
         this.analysisConfig = analysisConfig;
-        initializeDtlsFields(analysisConfig, connectionConfig);
+        initializeDtlsFields(analysisConfig, hostname, port, timeout);
     }
 
-    public static void main(String[] args) throws OverlappingFragmentException {
-        ConnectionConfig connectionConfig = new ConnectionConfig();
-        connectionConfig.setClientHostname("172.19.142.193");
-        connectionConfig.setClientPort(8090);
-        connectionConfig.setServerHostname("localhost");
-        connectionConfig.setServerPort(8080);
+    public static void main(String[] args) throws OverlappingFragmentException, JAXBException, FileNotFoundException {
+        String hostname = "172.19.142.193";
+        int port = 8090;
+        int timeout = 2000;
 
         AnalysisConfig config = new AnalysisConfig();
         config.setMessageType(MessageType.CLIENT_HELLO);
-        config.setClientHelloCipherSuites(Arrays.asList(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA));
+        config.setClientHelloCipherSuites(List.of(CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA));
         config.setClientHelloSignatureAndHashAlgorithms(Arrays.asList(SignatureAndHashAlgorithm.RSA_SHA256, SignatureAndHashAlgorithm.ECDSA_SHA256));
 
         FragmentConfig fragment1 = new FragmentConfig();
@@ -65,13 +61,14 @@ public class OverlappingFragmentAnalysis {
 
         config.setFragments(Arrays.asList(fragment1, fragment2));
 
-        OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(connectionConfig, config);
+        OverlappingFragmentAnalysis analysis = new OverlappingFragmentAnalysis(hostname, port, timeout, config);
         analysis.executeAnalysis();
     }
 
-    public void executeAnalysis() throws OverlappingFragmentException {
+    public void executeAnalysis() throws OverlappingFragmentException, JAXBException, FileNotFoundException {
         LOGGER.info("Setup analysis...");
-        AbstractAnalysis analysis = getOverlappingFragmentAnalysis(analysisConfig);
+        //AbstractAnalysis analysis = getOverlappingFragmentAnalysis(analysisConfig);
+        AbstractAnalysis analysis = getOverlappingFragmentAnalysis("127.0.0.1", 8090, "C:\\Users\\Sven\\Documents\\GitHub\\OverlappingFragments\\consecutiveTypeAOriginalOrder.xml");
         analysis.initializeWorkflowTrace();
         LOGGER.info("Analysis setup done");
 
@@ -85,18 +82,18 @@ public class OverlappingFragmentAnalysis {
         analysis.analyzeResults();
     }
 
-    private static void initializeDtlsFields(AnalysisConfig analysisConfig, ConnectionConfig connectionConfig) {
+    private static void initializeDtlsFields(AnalysisConfig analysisConfig, String hostname, int port, int timeout) {
         // Client connection
-        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setHostname(connectionConfig.getClientHostname());
-        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setPort(connectionConfig.getClientPort());
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setHostname(hostname);
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setPort(port);
         analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setTransportHandlerType(TransportHandlerType.UDP);
-        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setTimeout(connectionConfig.getClientTimeout());
+        analysisConfig.getTlsAttackerConfig().getDefaultClientConnection().setTimeout(timeout);
 
         // Server connection
-        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setHostname(connectionConfig.getServerHostname());
-        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setPort(connectionConfig.getServerPort());
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setHostname(hostname);
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setPort(port);
         analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setTransportHandlerType(TransportHandlerType.UDP);
-        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setTimeout(connectionConfig.getServerTimeout());
+        analysisConfig.getTlsAttackerConfig().getDefaultServerConnection().setTimeout(timeout);
 
         // Set DTLS
         analysisConfig.getTlsAttackerConfig().setDefaultLayerConfiguration(LayerConfiguration.DTLS);
@@ -113,19 +110,51 @@ public class OverlappingFragmentAnalysis {
         analysisConfig.getTlsAttackerConfig().setStopReceivingAfterFatal(true);
     }
 
-    public static AbstractAnalysis getOverlappingFragmentAnalysis(ConnectionConfig connectionConfig, String pathToAnalysisConfig) throws JAXBException, FileNotFoundException, OverlappingFragmentException {
+    public static AbstractAnalysis getOverlappingFragmentAnalysis(String hostname, int port, String pathToAnalysisConfig) throws JAXBException, FileNotFoundException, OverlappingFragmentException {
+        return getOverlappingFragmentAnalysis(hostname, port, 2000, pathToAnalysisConfig);
+    }
+
+    /**
+     * Initialize the analysis based on connection information.
+     *
+     * @param hostname the host to connect to
+     * @param port the port of the host
+     * @param timeout timeout when waiting for messages
+     * @param pathToAnalysisConfig path to an XML document describing the AnalysisConfig
+     * @return the analysis instance with the initialized Config and WorkflowTrace
+     * @throws OverlappingFragmentException if there is a problem when creating the fragments
+     */
+    public static AbstractAnalysis getOverlappingFragmentAnalysis(String hostname, int port, int timeout, String pathToAnalysisConfig) throws JAXBException, FileNotFoundException, OverlappingFragmentException {
         JAXBContext context = JAXBContext.newInstance(AnalysisConfig.class);
         FileReader reader = new FileReader(pathToAnalysisConfig);
         AnalysisConfig analysisConfig = (AnalysisConfig) context.createUnmarshaller().unmarshal(reader);
 
-        return getOverlappingFragmentAnalysis(connectionConfig, analysisConfig);
+        return getOverlappingFragmentAnalysis(hostname, port, timeout, analysisConfig);
     }
 
-    public static AbstractAnalysis getOverlappingFragmentAnalysis(ConnectionConfig connectionConfig, AnalysisConfig analysisConfig) throws OverlappingFragmentException{
-        initializeDtlsFields(analysisConfig, connectionConfig);
+    /**
+     * Initialize the analysis based on connection information.
+     *
+     * @param hostname the host to connect to
+     * @param port the port of the host
+     * @param timeout timeout when waiting for messages
+     * @param analysisConfig AnalysisConfig containing all required information
+     * @return the analysis instance with the initialized Config and WorkflowTrace
+     * @throws OverlappingFragmentException if there is a problem when creating the fragments
+     */
+    public static AbstractAnalysis getOverlappingFragmentAnalysis(String hostname, int port, int timeout, AnalysisConfig analysisConfig) throws OverlappingFragmentException{
+        initializeDtlsFields(analysisConfig, hostname, port, timeout);
         return getOverlappingFragmentAnalysis(analysisConfig);
     }
 
+    /**
+     * Initialize the analysis based on connection information. This should only be called
+     * after the AnalysisConfig has been instantiated and a Config with setTlsAttackerConfig
+     * has been set (used only for TLS-Scanner).
+     *
+     * @return the analysis instance with the initialized Config and WorkflowTrace
+     * @throws OverlappingFragmentException if there is a problem when creating the fragments
+     */
     public static AbstractAnalysis getOverlappingFragmentAnalysis(AnalysisConfig config) throws OverlappingFragmentException {
         MessageType messageType = config.getMessageType();
 

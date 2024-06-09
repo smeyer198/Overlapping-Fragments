@@ -7,7 +7,6 @@ import de.rub.nds.tlsattacker.core.workflow.WorkflowExecutorFactory;
 import de.rub.nds.tlsattacker.core.workflow.action.executor.WorkflowExecutorType;
 import de.upb.cs.analysis.AbstractAnalysis;
 import de.upb.cs.analysis.OverlappingFragmentException;
-import de.upb.cs.config.ConnectionConfig;
 import jakarta.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +22,7 @@ public class Main {
         JCommander.newBuilder().addObject(settings).build().parse(args);
 
         LOGGER.info("Setup analysis...");
-        ConnectionConfig connectionConfig = Main.createConnectionConfig(settings);
-
-        AbstractAnalysis analysis = OverlappingFragmentAnalysis.getOverlappingFragmentAnalysis(connectionConfig, settings.getAnalysisConfigPath());
+        AbstractAnalysis analysis = OverlappingFragmentAnalysis.getOverlappingFragmentAnalysis(settings.getHostname(), settings.getPort(), settings.getTimeout(), settings.getAnalysisConfigPath());
         analysis.initializeWorkflowTrace();
         LOGGER.info("Analysis setup done");
 
@@ -38,17 +35,4 @@ public class Main {
         analysis.analyzeResults();
     }
 
-    public static ConnectionConfig createConnectionConfig(AnalysisSettings settings) {
-        ConnectionConfig connectionConfig = new ConnectionConfig();
-
-        connectionConfig.setClientHostname(settings.getClientHostname());
-        connectionConfig.setClientPort(settings.getClientPort());
-        connectionConfig.setClientTimeout(settings.getClientTimeout());
-
-        connectionConfig.setServerHostname(settings.getServerHostname());
-        connectionConfig.setServerPort(settings.getServerPort());
-        connectionConfig.setServerTimeout(settings.getServerTimeout());
-
-        return connectionConfig;
-    }
 }
