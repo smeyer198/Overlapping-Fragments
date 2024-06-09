@@ -1,6 +1,6 @@
 # Overlapping Fragment Analysis
 
-Program to perform DTLS handshakes and arbitrarily fragment messages. The program can be installed with `mvn clean install`.
+The program can be installed with `mvn clean install`. Depending on the `message` field, the program tries to initiate a new connection to a server or waits for connections from a client.
 
 ### Run programmatically
 Include the project as dependency:
